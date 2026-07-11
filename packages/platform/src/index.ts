@@ -184,7 +184,9 @@ export async function atomicWrite(filePath: string, data: string | Uint8Array): 
   await rename(temporary, filePath);
   const directoryHandle = await open(directory, 'r');
   try {
-    await directoryHandle.sync();
+    await directoryHandle.sync().catch((error: NodeJS.ErrnoException) => {
+      if (error.code !== 'EPERM' && error.code !== 'EINVAL') throw error;
+    });
   } finally {
     await directoryHandle.close();
   }

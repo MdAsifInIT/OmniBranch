@@ -7,7 +7,7 @@ Deliver the complete local-first 0.1 implementation in dependency order, prove t
 ## Phases
 
 - [x] **Phase 1: Foundation and Configuration** - Monorepo, contracts, host abstractions, schemas, config, and initial CLI.
-- [ ] **Phase 2: Persistence and Git Recovery** - Canonical events, projections, safe Git/worktree operations, and reconciliation.
+- [x] **Phase 2: Persistence and Git Recovery** - Canonical events, projections, safe Git/worktree operations, and reconciliation.
 - [ ] **Phase 3: Deterministic Orchestration** - State machine, ownership, leases, scheduler, validation, and policy.
 - [ ] **Phase 4: Mock Vertical Slice and CLI** - Complete offline campaign lifecycle with every documented command.
 - [ ] **Phase 5: GitHub SCM Integration** - Provider-neutral GitHub reads and policy-gated idempotent mutations.
@@ -40,7 +40,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 02-01: Implement event store, projections, Git backend, locking, and reconciliation.
+- [x] 02-01: Implement event store, projections, Git backend, locking, and reconciliation.
 
 ### Phase 3: Deterministic Orchestration
 **Goal**: Schedule bounded work deterministically with exclusive ownership, live leases, validation evidence, and deny-first policy.
@@ -112,7 +112,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation and Configuration | 1/1 | Complete | 2026-07-12 |
-| 2. Persistence and Git Recovery | 0/1 | Not started | - |
+| 2. Persistence and Git Recovery | 1/1 | Complete | 2026-07-12 |
 | 3. Deterministic Orchestration | 0/1 | Not started | - |
 | 4. Mock Vertical Slice and CLI | 0/1 | Not started | - |
 | 5. GitHub SCM Integration | 0/1 | Not started | - |

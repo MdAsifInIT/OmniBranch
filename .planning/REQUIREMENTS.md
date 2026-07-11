@@ -14,10 +14,10 @@
 
 ### State and Git
 
-- [ ] **STATE-01**: Events append atomically with global ordering, stream concurrency, duplicate rejection, and no secrets.
-- [ ] **STATE-02**: Deleting SQLite and replaying JSONL reproduces identical canonical projections.
-- [ ] **GIT-01**: Branch and worktree mutations use expected-ref preconditions and are safe to retry after interruption.
-- [ ] **GIT-02**: Cleanup refuses dirty, uncontained, or unrelated work.
+- [x] **STATE-01**: Events append atomically with global ordering, stream concurrency, duplicate rejection, and no secrets.
+- [x] **STATE-02**: Deleting SQLite and replaying JSONL reproduces identical canonical projections.
+- [x] **GIT-01**: Branch and worktree mutations use expected-ref preconditions and are safe to retry after interruption.
+- [x] **GIT-02**: Cleanup refuses dirty, uncontained, or unrelated work.
 
 ### Orchestration and Safety
 
@@ -63,7 +63,7 @@
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | BASE-01, CONF-01, CONF-02, CONF-03 | Phase 1 | Complete |
-| STATE-01, STATE-02, GIT-01, GIT-02 | Phase 2 | Pending |
+| STATE-01, STATE-02, GIT-01, GIT-02 | Phase 2 | Complete |
 | ORCH-01, ORCH-02, ORCH-03, SAFE-01, VAL-01 | Phase 3 | Pending |
 | CLI-01, MOCK-01 | Phase 4 | Pending |
 | SCM-01 | Phase 5 | Pending |
