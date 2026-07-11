@@ -21,11 +21,11 @@
 
 ### Orchestration and Safety
 
-- [ ] **ORCH-01**: DAG scheduling is deterministic and respects dependencies and capacity limits.
-- [ ] **ORCH-02**: Conflicting ownership scopes never receive simultaneous write leases.
-- [ ] **ORCH-03**: Leases heartbeat, expire, supersede stale actors, and recover orphaned work safely.
-- [ ] **SAFE-01**: Unknown, destructive, secret, and external mutation actions fail closed or require explicit approval.
-- [ ] **VAL-01**: Required validation passes only on explicit `pass`; unavailable or malformed evidence blocks promotion.
+- [x] **ORCH-01**: DAG scheduling is deterministic and respects dependencies and capacity limits.
+- [x] **ORCH-02**: Conflicting ownership scopes never receive simultaneous write leases.
+- [x] **ORCH-03**: Leases heartbeat, expire, supersede stale actors, and recover orphaned work safely.
+- [x] **SAFE-01**: Unknown, destructive, secret, and external mutation actions fail closed or require explicit approval.
+- [x] **VAL-01**: Required validation passes only on explicit `pass`; unavailable or malformed evidence blocks promotion.
 
 ### Execution and Interfaces
 
@@ -64,7 +64,7 @@
 |-------------|-------|--------|
 | BASE-01, CONF-01, CONF-02, CONF-03 | Phase 1 | Complete |
 | STATE-01, STATE-02, GIT-01, GIT-02 | Phase 2 | Complete |
-| ORCH-01, ORCH-02, ORCH-03, SAFE-01, VAL-01 | Phase 3 | Pending |
+| ORCH-01, ORCH-02, ORCH-03, SAFE-01, VAL-01 | Phase 3 | Complete |
 | CLI-01, MOCK-01 | Phase 4 | Pending |
 | SCM-01 | Phase 5 | Pending |
 | AI-01, AI-02, SKILL-01 | Phase 6 | Pending |

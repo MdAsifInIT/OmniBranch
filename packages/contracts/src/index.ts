@@ -478,6 +478,7 @@ export interface SchedulerInput {
   readonly items: readonly WorkItemProjection[];
   readonly now: string;
   readonly globalCapacity: number;
+  readonly lanePriority: Readonly<Record<string, number>>;
   readonly laneCapacity: Readonly<Record<string, number>>;
   readonly adapterCapacity: Readonly<Record<string, number>>;
   readonly activeByLane: Readonly<Record<string, number>>;
