@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "bin": {
-    "omnibranch": "./dist/index.js"
+    "omnibranch": "./dist/main.js"
   },
   "dependencies": {
     "@omnibranch/contracts": "workspace:*",

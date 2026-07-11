@@ -20,7 +20,7 @@
     "test:security": "vitest run --project security",
     "typecheck": "tsc -b --pretty false",
     "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
-    "omnibranch": "node apps/cli/dist/index.js"
+    "omnibranch": "node apps/cli/dist/main.js"
   },
   "dependencies": {
     "@octokit/rest": "22.0.1",

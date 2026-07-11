@@ -9,7 +9,7 @@ Deliver the complete local-first 0.1 implementation in dependency order, prove t
 - [x] **Phase 1: Foundation and Configuration** - Monorepo, contracts, host abstractions, schemas, config, and initial CLI.
 - [x] **Phase 2: Persistence and Git Recovery** - Canonical events, projections, safe Git/worktree operations, and reconciliation.
 - [x] **Phase 3: Deterministic Orchestration** - State machine, ownership, leases, scheduler, validation, and policy.
-- [ ] **Phase 4: Mock Vertical Slice and CLI** - Complete offline campaign lifecycle with every documented command.
+- [x] **Phase 4: Mock Vertical Slice and CLI** - Complete offline campaign lifecycle with every documented command.
 - [ ] **Phase 5: GitHub SCM Integration** - Provider-neutral GitHub reads and policy-gated idempotent mutations.
 - [ ] **Phase 6: Engine Adapters and Skill** - Codex, Claude, OpenCode, Antigravity, and canonical skill packaging.
 - [ ] **Phase 7: Hardening and Release Readiness** - Hostile fixtures, dogfood profile, OS CI, audit, and release artifacts.
@@ -66,7 +66,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 04-01: Implement mock adapters, campaign service, remaining CLI, reports, and crash matrix.
+- [x] 04-01: Implement mock adapters, campaign service, remaining CLI, reports, and crash matrix.
 
 ### Phase 5: GitHub SCM Integration
 **Goal**: Add GitHub reads and policy-approved, dry-run-default, idempotent sandbox mutations.
@@ -114,7 +114,7 @@ Plans:
 | 1. Foundation and Configuration | 1/1 | Complete | 2026-07-12 |
 | 2. Persistence and Git Recovery | 1/1 | Complete | 2026-07-12 |
 | 3. Deterministic Orchestration | 1/1 | Complete | 2026-07-12 |
-| 4. Mock Vertical Slice and CLI | 0/1 | Not started | - |
+| 4. Mock Vertical Slice and CLI | 1/1 | Complete | 2026-07-12 |
 | 5. GitHub SCM Integration | 0/1 | Not started | - |
 | 6. Engine Adapters and Skill | 0/1 | Not started | - |
 | 7. Hardening and Release Readiness | 0/1 | Not started | - |
