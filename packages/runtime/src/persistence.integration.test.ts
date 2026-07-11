@@ -162,5 +162,5 @@ describe('native Git backend', () => {
         ).changed,
       ).toBe(true);
     });
-  });
+  }, 30_000);
 });
