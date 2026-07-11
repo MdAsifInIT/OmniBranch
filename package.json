@@ -20,6 +20,11 @@
     "test:security": "vitest run --project security",
     "typecheck": "tsc -b --pretty false",
     "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "skill:validate": "node skills/omnibranch/scripts/validate-skill.mjs",
+    "security:scan": "node scripts/security-scan.mjs",
+    "release:check": "node scripts/release-check.mjs",
+    "release:artifacts": "node scripts/generate-sbom.mjs && node scripts/generate-checksums.mjs",
+    "verify:release": "pnpm verify && pnpm skill:validate && pnpm security:scan && pnpm release:check && pnpm release:artifacts",
     "omnibranch": "node apps/cli/dist/main.js"
   },
   "dependencies": {
@@ -42,8 +47,8 @@
     "eslint": "10.7.0",
     "fast-check": "4.9.0",
     "prettier": "3.9.5",
-    "tsx": "4.23.0",
     "tsup": "8.5.1",
+    "tsx": "4.23.0",
     "typescript": "6.0.3",
     "typescript-eslint": "8.63.0",
     "vitest": "4.1.10"

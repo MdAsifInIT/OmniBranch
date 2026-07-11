@@ -364,6 +364,12 @@ export class DeterministicPolicyEngine implements PolicyEngine {
       outcome = 'deny';
       reasonCode = 'path-outside-repository';
     } else if (
+      request.externalTarget !== undefined &&
+      !context.externalAllowlist.includes(request.externalTarget)
+    ) {
+      outcome = 'deny';
+      reasonCode = 'external-target-not-allowed';
+    } else if (
       action === 'write_repo' &&
       (context.lease === undefined || new Date(context.lease.expiresAt) <= new Date(context.now))
     ) {

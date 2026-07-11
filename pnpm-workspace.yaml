@@ -6,3 +6,5 @@ allowBuilds:
   esbuild: true
 minimumReleaseAgeExclude:
   - eslint@10.7.0
+overrides:
+  esbuild: 0.28.1

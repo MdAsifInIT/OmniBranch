@@ -12,7 +12,7 @@ Deliver the complete local-first 0.1 implementation in dependency order, prove t
 - [x] **Phase 4: Mock Vertical Slice and CLI** - Complete offline campaign lifecycle with every documented command.
 - [x] **Phase 5: GitHub SCM Integration** - Provider-neutral GitHub reads and policy-gated idempotent mutations.
 - [x] **Phase 6: Engine Adapters and Skill** - Codex, Claude, OpenCode, Antigravity, and canonical skill packaging.
-- [ ] **Phase 7: Hardening and Release Readiness** - Hostile fixtures, dogfood profile, OS CI, audit, and release artifacts.
+- [x] **Phase 7: Hardening and Release Readiness** - Hostile fixtures, dogfood profile, OS CI, audit, and release artifacts.
 
 ## Phase Details
 
@@ -126,7 +126,7 @@ Plans:
 
 Plans:
 
-- [ ] 07-01: Add hostile fixtures, OS/release workflows, dogfood profile, documentation, and final audit.
+- [x] 07-01: Add hostile fixtures, OS/release workflows, dogfood profile, documentation, and final audit.
 
 ## Progress
 

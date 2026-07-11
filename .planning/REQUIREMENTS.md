@@ -38,9 +38,9 @@
 
 ### Quality and Release
 
-- [ ] **QUAL-01**: Unit, property, integration, concurrency, recovery, security, contract, golden, and E2E suites pass offline.
+- [x] **QUAL-01**: Unit, property, integration, concurrency, recovery, security, contract, golden, and E2E suites pass offline.
 - [ ] **QUAL-02**: Windows, macOS, and Linux CI pass on Node 22.
-- [ ] **REL-01**: Installation, upgrade, rollback, SBOM, checksums, provenance, compatibility, and limitations are documented and automated without publishing.
+- [x] **REL-01**: Installation, upgrade, rollback, SBOM, checksums, provenance, compatibility, and limitations are documented and automated without publishing.
 
 ## v2 Requirements
 

@@ -1,0 +1,8 @@
+{
+  "refs": [
+    "--upload-pack=evil",
+    "refs/heads/../../outside",
+    "refs/heads/topic@{1}",
+    "refs/heads/valid-topic"
+  ]
+}

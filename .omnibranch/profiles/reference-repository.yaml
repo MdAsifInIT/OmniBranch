@@ -1,0 +1,19 @@
+apiVersion: omnibranch.dev/v1alpha1
+kind: WorkspacePlan
+metadata:
+  name: omnibranch-reference
+repository:
+  trunk: main
+  worktreeRoot: .omnibranch-worktrees
+execution:
+  globalConcurrency: 2
+  defaultAdapter: mock
+policy:
+  default: deny
+  require_approval:
+    - scm_mutation
+    - network_write
+    - secret_read
+  deny:
+    - git_write_destructive
+    - cloud_mutation

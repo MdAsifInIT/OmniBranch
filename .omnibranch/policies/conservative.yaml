@@ -1,0 +1,14 @@
+apiVersion: omnibranch.dev/policy/v1alpha1
+name: conservative-dogfood
+stableBranches: [main, master, trunk, release]
+dogfoodBranchPattern: omnibranch/dogfood/*
+defaults:
+  unknownAction: deny
+  externalMutation: require_approval
+  unavailableValidation: fail
+  pluginTrust: deny_unverified
+prohibited:
+  - force_push
+  - hard_reset
+  - broad_clean
+  - unsafe_branch_delete
