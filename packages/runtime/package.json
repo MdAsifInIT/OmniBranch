@@ -1,0 +1,20 @@
+{
+  "name": "@omnibranch/runtime",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "types": "./dist/index.d.ts",
+  "dependencies": {
+    "@omnibranch/contracts": "workspace:*",
+    "@omnibranch/platform": "workspace:*",
+    "@omnibranch/test-kit": "workspace:*",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "better-sqlite3": "12.11.1",
+    "picomatch": "4.0.5",
+    "yaml": "2.9.0"
+  }
+}

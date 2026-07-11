@@ -1,0 +1,8 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.omnibranch-worktrees/
+.omnibranch/runtime/
+.env
+*.log

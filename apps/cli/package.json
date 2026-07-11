@@ -1,0 +1,16 @@
+{
+  "name": "@omnibranch/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "omnibranch": "./dist/index.js"
+  },
+  "dependencies": {
+    "@omnibranch/contracts": "workspace:*",
+    "@omnibranch/platform": "workspace:*",
+    "@omnibranch/runtime": "workspace:*",
+    "@omnibranch/adapters": "workspace:*",
+    "commander": "15.0.0"
+  }
+}

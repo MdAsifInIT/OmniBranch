@@ -7,10 +7,10 @@
 
 ### Foundation and Configuration
 
-- [ ] **BASE-01**: A clean checkout installs, formats, lints, type-checks, tests, and builds with a pinned toolchain.
-- [ ] **CONF-01**: Users can initialize an unsupported Git repository idempotently without unexpected source changes.
-- [ ] **CONF-02**: Users receive exact structural and semantic diagnostics for invalid WorkspacePlan YAML.
-- [ ] **CONF-03**: Repository root, common Git directory, trunk, remotes, and worktrees are discovered safely.
+- [x] **BASE-01**: A clean checkout installs, formats, lints, type-checks, tests, and builds with a pinned toolchain.
+- [x] **CONF-01**: Users can initialize an unsupported Git repository idempotently without unexpected source changes.
+- [x] **CONF-02**: Users receive exact structural and semantic diagnostics for invalid WorkspacePlan YAML.
+- [x] **CONF-03**: Repository root, common Git directory, trunk, remotes, and worktrees are discovered safely.
 
 ### State and Git
 
@@ -62,7 +62,7 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BASE-01, CONF-01, CONF-02, CONF-03 | Phase 1 | Pending |
+| BASE-01, CONF-01, CONF-02, CONF-03 | Phase 1 | Complete |
 | STATE-01, STATE-02, GIT-01, GIT-02 | Phase 2 | Pending |
 | ORCH-01, ORCH-02, ORCH-03, SAFE-01, VAL-01 | Phase 3 | Pending |
 | CLI-01, MOCK-01 | Phase 4 | Pending |

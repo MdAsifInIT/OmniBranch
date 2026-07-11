@@ -1,0 +1,16 @@
+{
+  "name": "@omnibranch/adapters",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "types": "./dist/index.d.ts",
+  "dependencies": {
+    "@omnibranch/contracts": "workspace:*",
+    "@omnibranch/platform": "workspace:*",
+    "@omnibranch/runtime": "workspace:*",
+    "@octokit/rest": "22.0.1"
+  }
+}

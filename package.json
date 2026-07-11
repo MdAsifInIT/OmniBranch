@@ -1,0 +1,51 @@
+{
+  "name": "omnibranch",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.11.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "node scripts/clean.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint . --max-warnings 0",
+    "test": "vitest run",
+    "test:unit": "vitest run --project unit",
+    "test:integration": "vitest run --project integration",
+    "test:contracts": "vitest run --project contracts",
+    "test:security": "vitest run --project security",
+    "typecheck": "tsc -b --pretty false",
+    "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "omnibranch": "node apps/cli/dist/index.js"
+  },
+  "dependencies": {
+    "@octokit/rest": "22.0.1",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "better-sqlite3": "12.11.1",
+    "commander": "15.0.0",
+    "execa": "9.6.1",
+    "picomatch": "4.0.5",
+    "pino": "10.3.1",
+    "yaml": "2.9.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/better-sqlite3": "7.6.13",
+    "@types/node": "22.20.1",
+    "@types/picomatch": "4.0.3",
+    "@vitest/coverage-v8": "4.1.10",
+    "eslint": "10.7.0",
+    "fast-check": "4.9.0",
+    "prettier": "3.9.5",
+    "tsx": "4.23.0",
+    "tsup": "8.5.1",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.63.0",
+    "vitest": "4.1.10"
+  }
+}

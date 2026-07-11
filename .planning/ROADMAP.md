@@ -6,7 +6,7 @@ Deliver the complete local-first 0.1 implementation in dependency order, prove t
 
 ## Phases
 
-- [ ] **Phase 1: Foundation and Configuration** - Monorepo, contracts, host abstractions, schemas, config, and initial CLI.
+- [x] **Phase 1: Foundation and Configuration** - Monorepo, contracts, host abstractions, schemas, config, and initial CLI.
 - [ ] **Phase 2: Persistence and Git Recovery** - Canonical events, projections, safe Git/worktree operations, and reconciliation.
 - [ ] **Phase 3: Deterministic Orchestration** - State machine, ownership, leases, scheduler, validation, and policy.
 - [ ] **Phase 4: Mock Vertical Slice and CLI** - Complete offline campaign lifecycle with every documented command.
@@ -27,7 +27,7 @@ Deliver the complete local-first 0.1 implementation in dependency order, prove t
 **Plans**: 1 plan
 
 Plans:
-- [ ] 01-01: Implement foundation, contracts, platform, configuration, discovery, and initial CLI.
+- [x] 01-01: Implement foundation, contracts, platform, configuration, discovery, and initial CLI.
 
 ### Phase 2: Persistence and Git Recovery
 **Goal**: Persist authoritative events, rebuild projections, and execute preconditioned Git/worktree mutations safely across crashes.
@@ -111,7 +111,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation and Configuration | 0/1 | Not started | - |
+| 1. Foundation and Configuration | 1/1 | Complete | 2026-07-12 |
 | 2. Persistence and Git Recovery | 0/1 | Not started | - |
 | 3. Deterministic Orchestration | 0/1 | Not started | - |
 | 4. Mock Vertical Slice and CLI | 0/1 | Not started | - |
