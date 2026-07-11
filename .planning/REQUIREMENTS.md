@@ -32,9 +32,9 @@
 - [x] **CLI-01**: Every documented CLI command provides stable JSON output and mutations support `--dry-run`.
 - [x] **MOCK-01**: Two disjoint mock workers complete concurrently in isolated worktrees and resume after every mutation boundary.
 - [x] **SCM-01**: GitHub reads and dry-run writes work offline against fakes; approved sandbox writes are idempotent.
-- [ ] **AI-01**: Codex and Claude implement the common adapter contract; unsupported capability downgrades safely.
-- [ ] **AI-02**: OpenCode and Antigravity preserve assignment identity and evidence through execution or guided handoff.
-- [ ] **SKILL-01**: The canonical OmniBranch skill validates, remains under 500 lines, and supports an independent safe fixture run.
+- [x] **AI-01**: Codex and Claude implement the common adapter contract; unsupported capability downgrades safely.
+- [x] **AI-02**: OpenCode and Antigravity preserve assignment identity and evidence through execution or guided handoff.
+- [x] **SKILL-01**: The canonical OmniBranch skill validates, remains under 500 lines, and supports an independent safe fixture run.
 
 ### Quality and Release
 
@@ -51,26 +51,27 @@
 
 ## Out of Scope
 
-| Feature | Reason |
-|---------|--------|
-| Production deployment agent | Violates the bounded local-first 0.1 safety posture |
-| Automatic stable-branch promotion | Requires explicit human and policy approval |
-| Unrestricted destructive Git | Data-loss risk; denied by design |
-| Hosted control plane | Core functionality must work locally |
+| Feature                           | Reason                                              |
+| --------------------------------- | --------------------------------------------------- |
+| Production deployment agent       | Violates the bounded local-first 0.1 safety posture |
+| Automatic stable-branch promotion | Requires explicit human and policy approval         |
+| Unrestricted destructive Git      | Data-loss risk; denied by design                    |
+| Hosted control plane              | Core functionality must work locally                |
 
 ## Traceability
 
-| Requirement | Phase | Status |
-|-------------|-------|--------|
-| BASE-01, CONF-01, CONF-02, CONF-03 | Phase 1 | Complete |
-| STATE-01, STATE-02, GIT-01, GIT-02 | Phase 2 | Complete |
+| Requirement                                | Phase   | Status   |
+| ------------------------------------------ | ------- | -------- |
+| BASE-01, CONF-01, CONF-02, CONF-03         | Phase 1 | Complete |
+| STATE-01, STATE-02, GIT-01, GIT-02         | Phase 2 | Complete |
 | ORCH-01, ORCH-02, ORCH-03, SAFE-01, VAL-01 | Phase 3 | Complete |
-| CLI-01, MOCK-01 | Phase 4 | Complete |
-| SCM-01 | Phase 5 | Complete |
-| AI-01, AI-02, SKILL-01 | Phase 6 | Pending |
-| QUAL-01, QUAL-02, REL-01 | Phase 7 | Pending |
+| CLI-01, MOCK-01                            | Phase 4 | Complete |
+| SCM-01                                     | Phase 5 | Complete |
+| AI-01, AI-02, SKILL-01                     | Phase 6 | Pending  |
+| QUAL-01, QUAL-02, REL-01                   | Phase 7 | Pending  |
 
 **Coverage:** 21 v1 requirements, 21 mapped, 0 unmapped.
 
 ---
-*Requirements defined: 2026-07-12*
+
+_Requirements defined: 2026-07-12_

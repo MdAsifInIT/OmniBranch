@@ -1,0 +1,7 @@
+{
+  "name": "omnibranch",
+  "version": "0.1.0",
+  "schema": "omnibranch.dev/skill/v1",
+  "entrypoint": "SKILL.md",
+  "generatedLayouts": ["codex", "claude", "opencode", "antigravity"]
+}

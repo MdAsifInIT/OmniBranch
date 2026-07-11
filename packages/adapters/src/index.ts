@@ -17,6 +17,7 @@ import type {
 
 export * from './github.js';
 export * from './github-push.js';
+export * from './engines.js';
 import {
   canonicalPathInside,
   ids,

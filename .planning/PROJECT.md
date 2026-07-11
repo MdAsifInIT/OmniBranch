@@ -42,14 +42,15 @@ The repository currently contains the complete product blueprint and no implemen
 
 ## Key Decisions
 
-| Decision | Rationale | Outcome |
-|----------|-----------|---------|
-| Deterministic control plane | Probabilistic workers cannot define repository truth | — Pending |
-| JSONL plus SQLite projection | Preserve inspectable audit history and fast queries | — Pending |
-| Native Git through argument arrays | Preserve full Git behavior without shell injection | — Pending |
-| Capability-driven adapters | Provider surfaces evolve independently | — Pending |
-| GitHub-first SCM | Prove a neutral contract against one provider | — Pending |
-| No daemon or dashboard in 0.1 | Keep recovery explicit while state semantics mature | — Pending |
+| Decision                           | Rationale                                            | Outcome   |
+| ---------------------------------- | ---------------------------------------------------- | --------- |
+| Deterministic control plane        | Probabilistic workers cannot define repository truth | — Pending |
+| JSONL plus SQLite projection       | Preserve inspectable audit history and fast queries  | — Pending |
+| Native Git through argument arrays | Preserve full Git behavior without shell injection   | — Pending |
+| Capability-driven adapters         | Provider surfaces evolve independently               | — Pending |
+| GitHub-first SCM                   | Prove a neutral contract against one provider        | — Pending |
+| No daemon or dashboard in 0.1      | Keep recovery explicit while state semantics mature  | — Pending |
 
 ---
-*Last updated: 2026-07-12 after documentation ingest*
+
+_Last updated: 2026-07-12 after documentation ingest_

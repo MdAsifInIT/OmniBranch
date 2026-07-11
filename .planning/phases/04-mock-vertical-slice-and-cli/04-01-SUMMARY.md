@@ -12,4 +12,3 @@ Key correctness fixes made during review:
 - report generation owns and closes its projection lifecycle;
 - worker launch promises overlap while Git setup remains guarded;
 - malformed results, stale leases, ownership conflicts, unavailable checks, and unsupported promotion are rejected.
-

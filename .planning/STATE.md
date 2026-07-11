@@ -4,10 +4,10 @@ status: planning
 milestone: 0.1.0
 progress:
   total_phases: 7
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 7
-  completed_plans: 5
-  percent: 71
+  completed_plans: 6
+  percent: 86
 ---
 
 # Project State
@@ -17,16 +17,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-12)
 
 **Core value:** Repository correctness remains deterministic, auditable, and resumable while multiple workers operate concurrently.
-**Current focus:** Phase 6 — Engine Adapters and Skill
+**Current focus:** Phase 7 — Hardening and Release Readiness
 
 ## Current Position
 
-Phase: 6 of 7 (Engine Adapters and Skill)
+Phase: 7 of 7 (Hardening and Release Readiness)
 Plan: 0 of 1 in current phase
-Status: Ready to execute Phase 6
-Last activity: 2026-07-12 — Phase 5 verified complete.
+Status: Ready to execute Phase 7
+Last activity: 2026-07-12 — Phase 6 verified complete.
 
-Progress: [███████░░░] 71%
+Progress: [█████████░] 86%
 
 ## Accumulated Context
 
@@ -46,13 +46,13 @@ None yet.
 
 ## Deferred Items
 
-| Category | Item | Status | Deferred At |
-|----------|------|--------|-------------|
-| External verification | Missing live engine installations | Deferred | Bootstrap |
-| External verification | GitHub sandbox mutation | Approval-gated | Bootstrap |
+| Category              | Item                              | Status         | Deferred At |
+| --------------------- | --------------------------------- | -------------- | ----------- |
+| External verification | Missing live engine installations | Deferred       | Bootstrap   |
+| External verification | GitHub sandbox mutation           | Approval-gated | Bootstrap   |
 
 ## Session Continuity
 
 Last session: 2026-07-12
-Stopped at: Phase 5 verified; Phase 6 next.
+Stopped at: Phase 6 verified; Phase 7 next.
 Resume file: None
