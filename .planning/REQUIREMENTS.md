@@ -31,7 +31,7 @@
 
 - [x] **CLI-01**: Every documented CLI command provides stable JSON output and mutations support `--dry-run`.
 - [x] **MOCK-01**: Two disjoint mock workers complete concurrently in isolated worktrees and resume after every mutation boundary.
-- [ ] **SCM-01**: GitHub reads and dry-run writes work offline against fakes; approved sandbox writes are idempotent.
+- [x] **SCM-01**: GitHub reads and dry-run writes work offline against fakes; approved sandbox writes are idempotent.
 - [ ] **AI-01**: Codex and Claude implement the common adapter contract; unsupported capability downgrades safely.
 - [ ] **AI-02**: OpenCode and Antigravity preserve assignment identity and evidence through execution or guided handoff.
 - [ ] **SKILL-01**: The canonical OmniBranch skill validates, remains under 500 lines, and supports an independent safe fixture run.
@@ -66,7 +66,7 @@
 | STATE-01, STATE-02, GIT-01, GIT-02 | Phase 2 | Complete |
 | ORCH-01, ORCH-02, ORCH-03, SAFE-01, VAL-01 | Phase 3 | Complete |
 | CLI-01, MOCK-01 | Phase 4 | Complete |
-| SCM-01 | Phase 5 | Pending |
+| SCM-01 | Phase 5 | Complete |
 | AI-01, AI-02, SKILL-01 | Phase 6 | Pending |
 | QUAL-01, QUAL-02, REL-01 | Phase 7 | Pending |
 

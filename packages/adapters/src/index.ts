@@ -14,6 +14,9 @@ import type {
   PreparedAssignment,
   RunId,
 } from '@omnibranch/contracts';
+
+export * from './github.js';
+export * from './github-push.js';
 import {
   canonicalPathInside,
   ids,

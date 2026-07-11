@@ -4,10 +4,10 @@ status: planning
 milestone: 0.1.0
 progress:
   total_phases: 7
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 7
-  completed_plans: 4
-  percent: 57
+  completed_plans: 5
+  percent: 71
 ---
 
 # Project State
@@ -17,16 +17,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-07-12)
 
 **Core value:** Repository correctness remains deterministic, auditable, and resumable while multiple workers operate concurrently.
-**Current focus:** Phase 5 — GitHub SCM Integration
+**Current focus:** Phase 6 — Engine Adapters and Skill
 
 ## Current Position
 
-Phase: 5 of 7 (GitHub SCM Integration)
+Phase: 6 of 7 (Engine Adapters and Skill)
 Plan: 0 of 1 in current phase
-Status: Ready to execute Phase 5
-Last activity: 2026-07-12 — Phase 4 verified complete.
+Status: Ready to execute Phase 6
+Last activity: 2026-07-12 — Phase 5 verified complete.
 
-Progress: [██████░░░░] 57%
+Progress: [███████░░░] 71%
 
 ## Accumulated Context
 
@@ -54,5 +54,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-07-12
-Stopped at: Phase 4 verified; Phase 5 next.
+Stopped at: Phase 5 verified; Phase 6 next.
 Resume file: None
