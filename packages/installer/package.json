@@ -1,0 +1,14 @@
+{
+  "name": "@omnibranch/installer",
+  "version": "0.2.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "types": "./dist/index.d.ts",
+  "dependencies": {
+    "@omnibranch/contracts": "workspace:*",
+    "@omnibranch/platform": "workspace:*"
+  }
+}

@@ -5,11 +5,11 @@
 
 ## Installer Core
 
-- [ ] **INST-01**: Resolve Codex, Claude, OpenCode, Antigravity, and generic Agent Skills destinations for supported scopes.
-- [ ] **INST-02**: Produce deterministic installation plans and deduplicate shared destinations.
-- [ ] **INST-03**: Install and update atomically with canonical file hashes, receipts, backups, and recovery journals.
-- [ ] **INST-04**: Roll back and uninstall only managed files, refusing modified content unless explicitly forced.
-- [ ] **INST-05**: Reject unsupported scopes, traversal, junction/symlink escape, corrupt payloads, concurrent installers, and incomplete recovery.
+- [x] **INST-01**: Resolve Codex, Claude, OpenCode, Antigravity, and generic Agent Skills destinations for supported scopes.
+- [x] **INST-02**: Produce deterministic installation plans and deduplicate shared destinations.
+- [x] **INST-03**: Install and update atomically with canonical file hashes, receipts, backups, and recovery journals.
+- [x] **INST-04**: Roll back and uninstall only managed files, refusing modified content unless explicitly forced.
+- [x] **INST-05**: Reject unsupported scopes, traversal, junction/symlink escape, corrupt payloads, concurrent installers, and incomplete recovery.
 
 ## Interfaces and Packaging
 

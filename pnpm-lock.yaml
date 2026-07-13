@@ -113,6 +113,15 @@ importers:
 
   packages/contracts: {}
 
+  packages/installer:
+    dependencies:
+      '@omnibranch/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@omnibranch/platform':
+        specifier: workspace:*
+        version: link:../platform
+
   packages/platform:
     dependencies:
       '@omnibranch/contracts':

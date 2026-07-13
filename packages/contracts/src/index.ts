@@ -552,3 +552,81 @@ export interface CiAdapter {
 export interface SecretProvider {
   resolve(reference: SecretReference): Promise<string>;
 }
+
+export type ProviderTarget =
+  'auto' | 'all' | 'codex' | 'claude' | 'opencode' | 'antigravity' | 'agents';
+
+export type ConcreteProviderTarget = Exclude<ProviderTarget, 'auto' | 'all'>;
+export type InstallScope = 'user' | 'project';
+export type InstallAction = 'install' | 'update' | 'rollback' | 'uninstall';
+export type InstallOperationMode = 'create' | 'replace' | 'update' | 'restore' | 'remove' | 'noop';
+
+export interface InstalledFileEvidence {
+  readonly path: string;
+  readonly sha256: string;
+  readonly size: number;
+  readonly executable: boolean;
+}
+
+export interface InstallOperation {
+  readonly targets: readonly ConcreteProviderTarget[];
+  readonly destination: string;
+  readonly mode: InstallOperationMode;
+  readonly managed: boolean;
+  readonly modified: boolean;
+  readonly reason: string;
+}
+
+export interface InstallPlan {
+  readonly schemaVersion: 'omnibranch.dev/skill-install/v1';
+  readonly action: InstallAction;
+  readonly requestedTarget: ProviderTarget;
+  readonly scope: InstallScope;
+  readonly projectRoot?: string;
+  readonly stateRoot: string;
+  readonly payloadVersion: string;
+  readonly payloadSha256: string;
+  readonly operations: readonly InstallOperation[];
+  readonly warnings: readonly string[];
+  readonly dryRun: boolean;
+}
+
+export interface InstallReceipt {
+  readonly schemaVersion: 'omnibranch.dev/skill-install/v1';
+  readonly receiptId: string;
+  readonly action: InstallAction;
+  readonly targets: readonly ConcreteProviderTarget[];
+  readonly scope: InstallScope;
+  readonly destination: string;
+  readonly stateRoot: string;
+  readonly payloadVersion: string;
+  readonly payloadSha256: string;
+  readonly installedAt: string;
+  readonly files: readonly InstalledFileEvidence[];
+  readonly active: boolean;
+  readonly backupPath?: string;
+  readonly previousReceiptId?: string;
+}
+
+export interface InstallerRecoveryJournal {
+  readonly schemaVersion: 'omnibranch.dev/skill-install/v1';
+  readonly transactionId: string;
+  readonly action: InstallAction;
+  readonly phase: 'prepared' | 'backup_created' | 'activated' | 'state_written';
+  readonly destination: string;
+  readonly stagingPath: string;
+  readonly previousPath?: string;
+  readonly backupPath?: string;
+  readonly receipt?: InstallReceipt;
+  readonly updatedAt: string;
+}
+
+export interface InstallerRequest {
+  readonly action: InstallAction;
+  readonly target: ProviderTarget;
+  readonly scope: InstallScope;
+  readonly projectRoot?: string;
+  readonly dryRun: boolean;
+  readonly replace?: boolean;
+  readonly force?: boolean;
+}

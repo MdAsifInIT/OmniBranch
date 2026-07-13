@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://omnibranch.dev/schemas/v1/skill-install.schema.json",
+  "title": "OmniBranch Skill Installation Evidence",
+  "oneOf": [
+    { "$ref": "#/$defs/plan" },
+    { "$ref": "#/$defs/receipt" },
+    { "$ref": "#/$defs/journal" }
+  ],
+  "$defs": {
+    "target": {
+      "type": "string",
+      "enum": ["codex", "claude", "opencode", "antigravity", "agents"]
+    },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "size", "executable"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "size": { "type": "integer", "minimum": 0 },
+        "executable": { "type": "boolean" }
+      }
+    },
+    "operation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["targets", "destination", "mode", "managed", "modified", "reason"],
+      "properties": {
+        "targets": { "type": "array", "items": { "$ref": "#/$defs/target" }, "minItems": 1 },
+        "destination": { "type": "string", "minLength": 1 },
+        "mode": { "enum": ["create", "replace", "update", "restore", "remove", "noop"] },
+        "managed": { "type": "boolean" },
+        "modified": { "type": "boolean" },
+        "reason": { "type": "string" }
+      }
+    },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "action",
+        "requestedTarget",
+        "scope",
+        "stateRoot",
+        "payloadVersion",
+        "payloadSha256",
+        "operations",
+        "warnings",
+        "dryRun"
+      ],
+      "properties": {
+        "schemaVersion": { "const": "omnibranch.dev/skill-install/v1" },
+        "action": { "enum": ["install", "update", "rollback", "uninstall"] },
+        "requestedTarget": {
+          "enum": ["auto", "all", "codex", "claude", "opencode", "antigravity", "agents"]
+        },
+        "scope": { "enum": ["user", "project"] },
+        "projectRoot": { "type": "string" },
+        "stateRoot": { "type": "string" },
+        "payloadVersion": { "type": "string" },
+        "payloadSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "operations": { "type": "array", "items": { "$ref": "#/$defs/operation" } },
+        "warnings": { "type": "array", "items": { "type": "string" } },
+        "dryRun": { "type": "boolean" }
+      }
+    },
+    "receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "receiptId",
+        "action",
+        "targets",
+        "scope",
+        "destination",
+        "stateRoot",
+        "payloadVersion",
+        "payloadSha256",
+        "installedAt",
+        "files",
+        "active"
+      ],
+      "properties": {
+        "schemaVersion": { "const": "omnibranch.dev/skill-install/v1" },
+        "receiptId": { "type": "string", "minLength": 1 },
+        "action": { "enum": ["install", "update", "rollback", "uninstall"] },
+        "targets": { "type": "array", "items": { "$ref": "#/$defs/target" }, "minItems": 1 },
+        "scope": { "enum": ["user", "project"] },
+        "destination": { "type": "string" },
+        "stateRoot": { "type": "string" },
+        "payloadVersion": { "type": "string" },
+        "payloadSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "installedAt": { "type": "string", "format": "date-time" },
+        "files": { "type": "array", "items": { "$ref": "#/$defs/file" } },
+        "active": { "type": "boolean" },
+        "backupPath": { "type": "string" },
+        "previousReceiptId": { "type": "string" }
+      }
+    },
+    "journal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "transactionId",
+        "action",
+        "phase",
+        "destination",
+        "stagingPath",
+        "updatedAt"
+      ],
+      "properties": {
+        "schemaVersion": { "const": "omnibranch.dev/skill-install/v1" },
+        "transactionId": { "type": "string" },
+        "action": { "enum": ["install", "update", "rollback", "uninstall"] },
+        "phase": { "enum": ["prepared", "backup_created", "activated", "state_written"] },
+        "destination": { "type": "string" },
+        "stagingPath": { "type": "string" },
+        "previousPath": { "type": "string" },
+        "backupPath": { "type": "string" },
+        "receipt": { "$ref": "#/$defs/receipt" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}
