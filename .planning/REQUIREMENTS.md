@@ -13,10 +13,10 @@
 
 ## Interfaces and Packaging
 
-- [ ] **CLI-02**: Expose `skill targets|plan|install|status|update|doctor|rollback|uninstall` through the stable CLI envelope.
-- [ ] **PKG-01**: Build one public `omnibranch@0.2.0` Node 22 package with the CLI binary and explicit file allowlist.
-- [ ] **PKG-02**: Embed one canonical Agent Skill tree and generate provider layouts with real `SKILL.md` entrypoints.
-- [ ] **PKG-03**: Provide valid Codex UI metadata and a versioned Claude plugin/marketplace layout.
+- [x] **CLI-02**: Expose `skill targets|plan|install|status|update|doctor|rollback|uninstall` through the stable CLI envelope.
+- [x] **PKG-01**: Build one public `omnibranch@0.2.0` Node 22 package with the CLI binary and explicit file allowlist.
+- [x] **PKG-02**: Embed one canonical Agent Skill tree and generate provider layouts with real `SKILL.md` entrypoints.
+- [x] **PKG-03**: Provide valid Codex UI metadata and a versioned Claude plugin/marketplace layout.
 - [ ] **PKG-04**: Install and exercise the packed npm tarball from an empty temporary prefix.
 
 ## Quality and Release

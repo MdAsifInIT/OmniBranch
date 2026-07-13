@@ -1,0 +1,11 @@
+{
+  "name": "omnibranch",
+  "version": "0.2.0",
+  "description": "Deterministic, policy-gated multi-worker repository orchestration.",
+  "author": {
+    "name": "OmniBranch contributors"
+  },
+  "repository": "https://github.com/MdAsifInIT/OmniBranch",
+  "license": "Apache-2.0",
+  "keywords": ["agent-skill", "git", "orchestration", "worktrees"]
+}

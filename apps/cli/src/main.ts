@@ -1,16 +1,24 @@
 #!/usr/bin/env node
-import { mkdir } from 'node:fs/promises';
+import { access, mkdir } from 'node:fs/promises';
 import path from 'node:path';
 
 import { Command } from 'commander';
 
 import { MockAiAdapter } from '@omnibranch/adapters';
-import type { CliEnvelope, Diagnostic, PolicyDecision } from '@omnibranch/contracts';
+import type {
+  CliEnvelope,
+  Diagnostic,
+  InstallScope,
+  PolicyDecision,
+  ProviderTarget,
+} from '@omnibranch/contracts';
+import { InstallerError, SkillInstaller } from '@omnibranch/installer';
 import {
   ExecaProcessRunner,
   hostFacts,
   safeCreateFile,
   SequenceIdGenerator,
+  stableHash,
   SystemClock,
 } from '@omnibranch/platform';
 import {
@@ -34,10 +42,18 @@ interface CommandResult {
   readonly policyDecisions?: readonly PolicyDecision[];
 }
 
+interface SkillOptions extends Globals {
+  readonly target: ProviderTarget;
+  readonly scope: InstallScope;
+  readonly project?: string;
+  readonly replace?: boolean;
+  readonly force?: boolean;
+}
+
 const cli = new Command()
   .name('omnibranch')
   .description('Deterministic branch and worktree orchestration for bounded AI development work.')
-  .version('0.1.0')
+  .version('0.2.0')
   .option('--json', 'emit a stable machine-readable envelope')
   .option('--dry-run', 'plan mutations without executing them', false)
   .option('--config <path>', 'WorkspacePlan path', '.omnibranch/workspace.yaml');
@@ -112,6 +128,103 @@ config
       };
     });
   });
+
+const skill = cli.command('skill').description('Install and manage the OmniBranch Agent Skill.');
+
+configureSkillCommand(skill.command('targets').description('List provider destinations.')).action(
+  async (options: SkillOptions) => {
+    options = effectiveSkillOptions(options);
+    await execute(
+      'skill targets',
+      async () => {
+        const context = await skillContext(options);
+        return { data: await context.installer.targets(options.scope, context.projectRoot) };
+      },
+      options,
+    );
+  },
+);
+
+configureSkillCommand(skill.command('plan').description('Plan skill installation.')).action(
+  async (options: SkillOptions) => {
+    options = effectiveSkillOptions(options);
+    await execute(
+      'skill plan',
+      async () => {
+        const context = await skillContext(options);
+        return {
+          data: await context.installer.plan({
+            action: 'install',
+            target: options.target,
+            scope: options.scope,
+            dryRun: true,
+            ...(context.projectRoot === undefined ? {} : { projectRoot: context.projectRoot }),
+            ...(options.replace === undefined ? {} : { replace: options.replace }),
+            ...(options.force === undefined ? {} : { force: options.force }),
+          }),
+        };
+      },
+      options,
+    );
+  },
+);
+
+for (const action of ['install', 'update', 'rollback', 'uninstall'] as const) {
+  configureSkillCommand(
+    skill.command(action).description(`${titleCase(action)} managed skill files.`),
+  ).action(async (options: SkillOptions) => {
+    options = effectiveSkillOptions(options);
+    await execute(
+      `skill ${action}`,
+      async () => {
+        const context = await skillContext(options);
+        const decision = installerPolicyDecision(action, options.dryRun ?? false);
+        const request = {
+          target: options.target,
+          scope: options.scope,
+          dryRun: options.dryRun ?? false,
+          ...(context.projectRoot === undefined ? {} : { projectRoot: context.projectRoot }),
+          ...(options.replace === undefined ? {} : { replace: options.replace }),
+          ...(options.force === undefined ? {} : { force: options.force }),
+        };
+        const plan = await context.installer.plan({ ...request, action });
+        const receipts = await context.installer[action](request);
+        return { data: { plan, receipts }, warnings: plan.warnings, policyDecisions: [decision] };
+      },
+      options,
+    );
+  });
+}
+
+configureSkillCommand(skill.command('status').description('Inspect managed installations.')).action(
+  async (options: SkillOptions) => {
+    options = effectiveSkillOptions(options);
+    await execute(
+      'skill status',
+      async () => {
+        const context = await skillContext(options);
+        return {
+          data: await context.installer.status(options.target, options.scope, context.projectRoot),
+        };
+      },
+      options,
+    );
+  },
+);
+
+configureSkillCommand(
+  skill.command('doctor').description('Verify payload and installation health.'),
+).action(async (options: SkillOptions) => {
+  options = effectiveSkillOptions(options);
+  await execute(
+    'skill doctor',
+    async () => {
+      const context = await skillContext(options);
+      return { data: await context.installer.doctor(options.scope, context.projectRoot) };
+    },
+    options,
+  );
+});
 
 const campaign = cli.command('campaign').description('Campaign operations.');
 campaign
@@ -272,6 +385,89 @@ class ConfigValidationError extends Error {
   }
 }
 
+function configureSkillCommand(command: Command): Command {
+  return command
+    .option('--target <target>', 'auto|all|codex|claude|opencode|antigravity|agents', 'auto')
+    .option('--scope <scope>', 'user|project', 'user')
+    .option('--project <path>', 'project root')
+    .option('--dry-run', 'plan mutations without executing them', false)
+    .option('--json', 'emit a stable machine-readable envelope', false)
+    .option('--replace', 'adopt and replace an unmanaged destination', false)
+    .option('--force', 'replace or remove modified managed files', false);
+}
+
+function effectiveSkillOptions(options: SkillOptions): SkillOptions {
+  const root = cli.opts<Globals>();
+  return {
+    ...options,
+    json: options.json === true || root.json === true,
+    dryRun: options.dryRun === true || root.dryRun === true,
+  };
+}
+
+async function skillContext(options: SkillOptions): Promise<{
+  readonly installer: SkillInstaller;
+  readonly projectRoot?: string;
+}> {
+  if (
+    !['auto', 'all', 'codex', 'claude', 'opencode', 'antigravity', 'agents'].includes(
+      options.target,
+    )
+  )
+    throw new InstallerError('INTEGRITY_FAILURE', `Unknown provider target: ${options.target}`);
+  if (!['user', 'project'].includes(options.scope))
+    throw new InstallerError('INTEGRITY_FAILURE', `Unknown installation scope: ${options.scope}`);
+  const projectRoot =
+    options.scope === 'project'
+      ? path.resolve(options.project ?? (await discover()).root)
+      : undefined;
+  return {
+    installer: new SkillInstaller(await locateSkillPayload()),
+    ...(projectRoot === undefined ? {} : { projectRoot }),
+  };
+}
+
+async function locateSkillPayload(): Promise<string> {
+  const moduleDirectory = path.dirname(path.resolve(process.argv[1] ?? process.cwd()));
+  const candidates = [
+    path.resolve(moduleDirectory, '..', 'skill', 'omnibranch'),
+    path.resolve(moduleDirectory, '..', '..', '..', 'skills', 'omnibranch'),
+    path.resolve(process.cwd(), 'skills', 'omnibranch'),
+  ];
+  for (const candidate of candidates) {
+    try {
+      await access(path.join(candidate, 'SKILL.md'));
+      return candidate;
+    } catch {
+      // Continue through package and source layouts.
+    }
+  }
+  throw new InstallerError('INTEGRITY_FAILURE', 'Bundled OmniBranch skill payload is missing.', {
+    candidates,
+  });
+}
+
+function installerPolicyDecision(action: string, dryRun: boolean): PolicyDecision {
+  const evaluatedAt = new Date().toISOString();
+  return {
+    decisionId:
+      `policy_${stableHash(`skill:${action}:${dryRun}`).slice(0, 24)}` as PolicyDecision['decisionId'],
+    outcome: dryRun ? 'force_dry_run' : 'allow',
+    reasonCode: dryRun ? 'explicit-dry-run' : 'explicit-local-installer-invocation',
+    reasons: [
+      dryRun
+        ? 'The requested mutation is being planned without activation.'
+        : 'The operator explicitly invoked a contained, receipt-backed local installation.',
+    ],
+    actionClass: 'execute_local_mutating',
+    evaluatedAt,
+  };
+}
+
+function titleCase(value: string): string {
+  return `${value[0]?.toUpperCase() ?? ''}${value.slice(1)}`;
+}
+
 async function discover(runner = new ExecaProcessRunner()) {
   return new RepositoryDiscovery(runner).discover(process.cwd());
 }
@@ -285,8 +481,15 @@ async function service(): Promise<LocalCampaignService> {
 async function execute(
   command: string,
   operation: (globals: Globals) => Promise<CommandResult>,
+  override: Globals = {},
 ): Promise<void> {
-  const globals = cli.opts<Globals>();
+  const rootGlobals = cli.opts<Globals>();
+  const globals = {
+    ...rootGlobals,
+    ...override,
+    json: rootGlobals.json === true || override.json === true,
+    dryRun: rootGlobals.dryRun === true || override.dryRun === true,
+  };
   try {
     const result = await operation(globals);
     emit(
@@ -316,11 +519,21 @@ async function execute(
                 retryability: 'non_retryable',
                 details: { diagnostics: error.diagnostics },
               }
-            : {
-                code: 'COMMAND_FAILED',
-                message: error instanceof Error ? error.message : String(error),
-                retryability: 'non_retryable',
-              },
+            : error instanceof InstallerError
+              ? {
+                  code: error.code,
+                  message: error.message,
+                  retryability:
+                    error.code === 'PARTIAL_INSTALLATION' || error.code === 'RECOVERY_INCOMPLETE'
+                      ? ('retryable' as const)
+                      : ('non_retryable' as const),
+                  details: error.details,
+                }
+              : {
+                  code: 'COMMAND_FAILED',
+                  message: error instanceof Error ? error.message : String(error),
+                  retryability: 'non_retryable',
+                },
       },
       globals.json ?? false,
     );
@@ -334,6 +547,9 @@ function emit(envelope: CliEnvelope, json: boolean): void {
   else process.stderr.write(output);
 }
 
-await cli.parseAsync(process.argv);
+void cli.parseAsync(process.argv).catch((error: unknown) => {
+  process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+  process.exitCode = 1;
+});
 
 export { cli };

@@ -1,6 +1,5 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import Ajv2020, { type ErrorObject } from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
@@ -9,6 +8,7 @@ import { LineCounter, parseDocument } from 'yaml';
 
 import type { Diagnostic, WorkspacePlan } from '@omnibranch/contracts';
 import { isPathInside, redact } from '@omnibranch/platform';
+import workspacePlanSchema from '../../../schemas/v1alpha1/workspace-plan.schema.json' with { type: 'json' };
 
 type MutableObject = Record<string, unknown>;
 
@@ -18,11 +18,6 @@ export interface ConfigResult {
   readonly diagnostics: readonly Diagnostic[];
   readonly redactedSnapshot?: Readonly<Record<string, unknown>>;
 }
-
-const schemaPath = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '../../../schemas/v1alpha1/workspace-plan.schema.json',
-);
 
 export async function loadWorkspacePlan(filePath: string): Promise<ConfigResult> {
   const source = await readFile(filePath, 'utf8');
@@ -59,7 +54,6 @@ export async function loadWorkspacePlan(filePath: string): Promise<ConfigResult>
   }
 
   applyDefaults(parsed);
-  const schema = JSON.parse(await readFile(schemaPath, 'utf8')) as object;
   const ajv = new Ajv2020.default({
     allErrors: true,
     strict: true,
@@ -67,7 +61,7 @@ export async function loadWorkspacePlan(filePath: string): Promise<ConfigResult>
     useDefaults: true,
   });
   addFormats.default(ajv);
-  const validate = ajv.compile(schema);
+  const validate = ajv.compile(workspacePlanSchema);
   const structurallyValid = validate(parsed);
   const diagnostics = structurallyValid
     ? []

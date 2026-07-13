@@ -1,4 +1,3 @@
-<!-- generated from skills/omnibranch/SKILL.md; do not edit -->
 ---
 name: omnibranch
 description: Plan, run, recover, validate, and report bounded multi-worker repository campaigns with OmniBranch.

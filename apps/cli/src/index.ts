@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import { Command } from 'commander';
 
@@ -272,10 +271,6 @@ function emit(envelope: CliEnvelope, json: boolean): void {
       for (const item of diagnostics) process.stderr.write(`- ${JSON.stringify(item)}\n`);
     }
   }
-}
-
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  await program.parseAsync(process.argv);
 }
 
 export { DEFAULT_CONFIG, program };

@@ -7,7 +7,7 @@ Turn the completed local-first 0.1 implementation into one distributable Node 22
 ## Phases
 
 - [x] **Phase 8: Installer Contracts and Core** - Versioned public contracts, target resolution, integrity, receipts, atomic lifecycle, recovery, and security.
-- [ ] **Phase 9: CLI Package and Provider Distribution** - Installer CLI commands, canonical provider layouts, public npm package assembly, and Claude plugin marketplace.
+- [x] **Phase 9: CLI Package and Provider Distribution** - Installer CLI commands, canonical provider layouts, public npm package assembly, and Claude plugin marketplace.
 - [ ] **Phase 10: Package Verification and Release Readiness** - Tarball installation, cross-platform CI, archives, SBOM/checksums, documentation, and final audit.
 
 ## Phase Details
@@ -41,7 +41,7 @@ Plans:
 
 Plans:
 
-- [ ] 09-01: Implement CLI integration, skill generation, package bundling, Codex metadata, and Claude distribution.
+- [x] 09-01: Implement CLI integration, skill generation, package bundling, Codex metadata, and Claude distribution.
 
 ### Phase 10: Package Verification and Release Readiness
 
@@ -64,5 +64,5 @@ Plans:
 | Phase                                          | Plans Complete | Status      | Completed  |
 | ---------------------------------------------- | -------------- | ----------- | ---------- |
 | 8. Installer Contracts and Core                | 1/1            | Complete    | 2026-07-13 |
-| 9. CLI Package and Provider Distribution       | 0/1            | Not started | -          |
+| 9. CLI Package and Provider Distribution       | 1/1            | Complete    | 2026-07-13 |
 | 10. Package Verification and Release Readiness | 0/1            | Not started | -          |

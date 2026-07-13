@@ -1,6 +1,6 @@
 {
-  "name": "omnibranch",
-  "version": "0.1.0",
+  "name": "@omnibranch/workspace",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@11.11.0",
@@ -8,7 +8,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "build": "tsc -b",
+    "build": "tsc -b && pnpm --filter omnibranch build",
     "clean": "node scripts/clean.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -25,7 +25,7 @@
     "release:check": "node scripts/release-check.mjs",
     "release:artifacts": "node scripts/generate-sbom.mjs && node scripts/generate-checksums.mjs",
     "verify:release": "pnpm verify && pnpm skill:validate && pnpm security:scan && pnpm release:check && pnpm release:artifacts",
-    "omnibranch": "node apps/cli/dist/main.js"
+    "omnibranch": "node apps/cli/dist/main.cjs"
   },
   "dependencies": {
     "@octokit/rest": "22.0.1",

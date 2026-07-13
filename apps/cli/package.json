@@ -1,16 +1,42 @@
 {
-  "name": "@omnibranch/cli",
-  "version": "0.1.0",
+  "name": "omnibranch",
+  "version": "0.2.0",
+  "description": "Deterministic, provider-neutral orchestration and universal Agent Skill installer.",
   "type": "module",
-  "private": true,
+  "private": false,
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MdAsifInIT/OmniBranch.git",
+    "directory": "apps/cli"
+  },
+  "bugs": "https://github.com/MdAsifInIT/OmniBranch/issues",
+  "homepage": "https://github.com/MdAsifInIT/OmniBranch#readme",
+  "engines": {
+    "node": ">=22"
+  },
   "bin": {
-    "omnibranch": "./dist/main.js"
+    "omnibranch": "./dist/main.cjs"
+  },
+  "files": [
+    "dist/",
+    "skill/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node ../../skills/omnibranch/scripts/generate-layouts.mjs ../../skills/omnibranch && node ../../scripts/assemble-package.mjs && tsup --config tsup.config.mjs",
+    "typecheck": "tsc -b --pretty false"
   },
   "dependencies": {
+    "better-sqlite3": "12.11.1"
+  },
+  "devDependencies": {
+    "@omnibranch/adapters": "workspace:*",
     "@omnibranch/contracts": "workspace:*",
+    "@omnibranch/installer": "workspace:*",
     "@omnibranch/platform": "workspace:*",
     "@omnibranch/runtime": "workspace:*",
-    "@omnibranch/adapters": "workspace:*",
     "commander": "15.0.0"
   }
 }

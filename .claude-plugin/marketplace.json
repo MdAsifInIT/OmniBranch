@@ -1,0 +1,14 @@
+{
+  "name": "omnibranch-tools",
+  "owner": {
+    "name": "OmniBranch contributors"
+  },
+  "plugins": [
+    {
+      "name": "omnibranch",
+      "description": "Deterministic, policy-gated multi-worker repository orchestration.",
+      "version": "0.2.0",
+      "source": "./distribution/claude-plugin"
+    }
+  ]
+}
