@@ -138,7 +138,7 @@ describe('SkillInstaller lifecycle', () => {
     await expect(installer.update(request)).resolves.toHaveLength(5);
     await expect(installer.uninstall(request)).resolves.toHaveLength(5);
     await expect(installer.rollback(request)).resolves.toHaveLength(5);
-  });
+  }, 20_000);
 
   it('installs, reports, updates, uninstalls, and rolls back managed evidence', async () => {
     const { home, payload, installer } = await fixture(['agents']);

@@ -37,6 +37,8 @@ updated: 2026-07-13
   observation: after workspace resolution was fixed, Ubuntu exposed that the installer fixture inherited the runner's `XDG_CONFIG_HOME`, while macOS passed the same isolated tests.
 - timestamp: 2026-07-13T08:22:38Z
   observation: run 29235121877 passed Ubuntu, macOS, and Windows; GitHub emitted only a Node 20 action-runtime deprecation warning.
+- timestamp: 2026-07-13T08:26:53Z
+  observation: after upgrading action runtimes, Windows completed the all-provider lifecycle in 5008 ms and exceeded Vitest's generic 5000 ms unit timeout; Ubuntu and macOS passed.
 
 ## Eliminated
 
@@ -44,10 +46,12 @@ updated: 2026-07-13
   reason: the same module-resolution failure occurs before installer behavior on every runner.
 - hypothesis: incorrect OpenCode destination mapping
   reason: the production mapping correctly honors `XDG_CONFIG_HOME`; the test fixture failed to isolate that environment variable.
+- hypothesis: newer action runtimes broke installer behavior
+  reason: every assertion completed successfully on Windows; only the generic five-second timeout expired during filesystem-heavy multi-provider rollback.
 
 ## Resolution
 
 - root_cause: the isolated CI test step ran before TypeScript project references built private workspace packages, and its installer fixture inherited host-specific provider environment variables.
-- fix: build workspace entry points before isolated tests, give the fixture a complete temporary provider environment, and update official workflow actions to their Node 24 runtime majors.
-- verification: 17 isolated tests and the complete release gate pass locally; GitHub run 29235121877 passed the three-OS matrix before the warning-only action upgrade.
+- fix: build workspace entry points before isolated tests, give the fixture a complete temporary provider environment, set a 20-second budget on the filesystem-heavy all-provider lifecycle, and update official workflow actions to their Node 24 runtime majors.
+- verification: 17 isolated tests and the complete release gate pass locally; GitHub run 29235121877 passed the three-OS matrix before the warning-only action upgrade, with final confirmation pending.
 - files_changed: `.github/workflows/ci.yml`, `.github/workflows/release.yml`, `packages/installer/src/installer.test.ts`
