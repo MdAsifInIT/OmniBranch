@@ -35,6 +35,8 @@ updated: 2026-07-13
   observation: the complete release gate passed all 59 tests, package verification, security checks, and artifact generation.
 - timestamp: 2026-07-13T08:18:19Z
   observation: after workspace resolution was fixed, Ubuntu exposed that the installer fixture inherited the runner's `XDG_CONFIG_HOME`, while macOS passed the same isolated tests.
+- timestamp: 2026-07-13T08:22:38Z
+  observation: run 29235121877 passed Ubuntu, macOS, and Windows; GitHub emitted only a Node 20 action-runtime deprecation warning.
 
 ## Eliminated
 
@@ -46,6 +48,6 @@ updated: 2026-07-13
 ## Resolution
 
 - root_cause: the isolated CI test step ran before TypeScript project references built private workspace packages, and its installer fixture inherited host-specific provider environment variables.
-- fix: build workspace entry points before isolated tests and give the fixture a complete temporary HOME, USERPROFILE, CODEX_HOME, and XDG_CONFIG_HOME environment.
-- verification: 17 isolated tests and the complete release gate pass locally; GitHub three-OS confirmation follows the follow-up push.
-- files_changed: `.github/workflows/ci.yml`, `packages/installer/src/installer.test.ts`
+- fix: build workspace entry points before isolated tests, give the fixture a complete temporary provider environment, and update official workflow actions to their Node 24 runtime majors.
+- verification: 17 isolated tests and the complete release gate pass locally; GitHub run 29235121877 passed the three-OS matrix before the warning-only action upgrade.
+- files_changed: `.github/workflows/ci.yml`, `.github/workflows/release.yml`, `packages/installer/src/installer.test.ts`
