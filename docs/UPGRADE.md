@@ -1,10 +1,13 @@
 # Upgrade
 
-1. Stop active workers and record `omnibranch status --json`.
-2. Back up canonical `.omnibranch/runtime/events.jsonl` and configuration.
-3. Fetch the desired signed source revision through your normal reviewed process.
-4. Install with the pinned pnpm version and frozen lockfile.
-5. Run `pnpm verify:release`, `omnibranch config validate --json`, and `omnibranch reconcile --dry-run --json`.
-6. Rebuild SQLite from JSONL before resuming.
+Preview and apply a managed skill upgrade:
 
-Breaking configuration, event, evidence, adapter, report, CLI, or skill changes require a migration and a documented compatibility note.
+```sh
+npx omnibranch@0.2.0 skill plan --target auto --scope user --dry-run --json
+npx omnibranch@0.2.0 skill update --target auto --scope user --json
+omnibranch skill doctor --scope user --json
+```
+
+`update` operates only on receipt-managed destinations. It is a no-op when hashes already match and refuses local modifications unless `--force` is explicitly supplied. Previous managed content is retained as the rollback backup.
+
+Before upgrading the orchestration runtime, stop workers, preserve authoritative JSONL events and configuration, run the complete release gate, then reconcile in dry-run mode. Breaking configuration, event, installer, evidence, adapter, report, CLI, or skill changes require a migration.

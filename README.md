@@ -19,7 +19,7 @@ The project is for maintainers who want to run parallel development work without
 
 ## Status
 
-`0.1.0` is an active, source-distributed release. The project has a complete local vertical slice and intentionally remains conservative around remote mutations and stable-branch promotion. Please read [limitations](docs/LIMITATIONS.md), [compatibility](docs/COMPATIBILITY.md), and the [security policy](SECURITY.md) before using it with a production repository.
+`0.2.0` is release-ready as a universal Node 22 package, but has not been published. It bundles the CLI and the same verified Agent Skill for Codex, Claude Code, OpenCode, Antigravity, and generic Agent Skills. The project remains conservative around remote mutations and stable-branch promotion. Please read [limitations](docs/LIMITATIONS.md), [compatibility](docs/COMPATIBILITY.md), and the [security policy](SECURITY.md) before using it with a production repository.
 
 ## Requirements
 
@@ -54,7 +54,7 @@ pnpm omnibranch -- init --json
 pnpm omnibranch -- config validate --json
 ```
 
-The `0.1` release is not published to npm. See the [installation guide](docs/INSTALLATION.md) for details and [examples](docs/EXAMPLES.md) for the campaign workflow.
+After an authorized release, use `npm install --global omnibranch@0.2.0` or `npx omnibranch@0.2.0 skill install --target auto --scope user`. See the [installation guide](docs/INSTALLATION.md) and [examples](docs/EXAMPLES.md). Implementation does not publish the package.
 
 ## Typical workflow
 

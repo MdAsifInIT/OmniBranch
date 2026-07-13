@@ -1,9 +1,11 @@
 # Limitations
 
-- No dashboard, daemon, hosted control plane, deployment agent, or automatic stable-branch promotion ships in 0.1.
-- JSONL is authoritative; SQLite is a disposable local projection.
-- GitHub live writes require a named sandbox, scoped credentials, and exact human approval.
-- Provider CLI syntax is compatibility configuration until verified for an installed version.
-- Cross-platform CI results cannot be claimed from a single Windows host.
-- Ordinary Git push uses an expected-remote preflight plus non-force push; concurrent remote movement is ultimately rejected by Git/branch protection, not made atomic by a force lease.
-- Junction/symlink behavior depends on host filesystem support and permissions.
+- The 0.2 distributable requires Node 22; native standalone executables are deferred.
+- Certified installation targets are Codex, Claude Code, OpenCode, Antigravity, and generic Agent Skills only.
+- Codex project-scoped discovery is not verified; use the generic `.agents/skills` target.
+- Antigravity IDE uses guided handoff; missing or unknown provider safety capabilities never imply autonomy.
+- No dashboard, daemon, hosted control plane, automatic stable-branch promotion, or telemetry ships in 0.2.
+- GitHub live writes and package/marketplace publication require separate named approvals and credentials.
+- Claude, OpenCode, and Antigravity live engine execution remains unverified on this host; fixture contracts pass.
+- Junction and symlink behavior depends on host filesystem capabilities, but containment failures are denied.
+- JSONL remains authoritative; SQLite is a rebuildable local projection.

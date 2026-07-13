@@ -17,12 +17,12 @@
 - [x] **PKG-01**: Build one public `omnibranch@0.2.0` Node 22 package with the CLI binary and explicit file allowlist.
 - [x] **PKG-02**: Embed one canonical Agent Skill tree and generate provider layouts with real `SKILL.md` entrypoints.
 - [x] **PKG-03**: Provide valid Codex UI metadata and a versioned Claude plugin/marketplace layout.
-- [ ] **PKG-04**: Install and exercise the packed npm tarball from an empty temporary prefix.
+- [x] **PKG-04**: Install and exercise the packed npm tarball from an empty temporary prefix.
 
 ## Quality and Release
 
-- [ ] **QUAL-03**: Unit, integration, security, contract, package, and isolated-home installer suites pass offline.
-- [ ] **REL-02**: Generate deterministic skill/plugin archives, SBOM, checksums, provenance configuration, and 0.2 documentation without publishing.
+- [x] **QUAL-03**: Unit, integration, security, contract, package, and isolated-home installer suites pass offline.
+- [x] **REL-02**: Generate deterministic skill/plugin archives, SBOM, checksums, provenance configuration, and 0.2 documentation without publishing.
 
 ## Out of Scope
 

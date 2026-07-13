@@ -19,7 +19,7 @@
     "omnibranch": "./dist/main.cjs"
   },
   "files": [
-    "dist/",
+    "dist/main.cjs",
     "skill/",
     "README.md",
     "LICENSE"
@@ -30,13 +30,5 @@
   },
   "dependencies": {
     "better-sqlite3": "12.11.1"
-  },
-  "devDependencies": {
-    "@omnibranch/adapters": "workspace:*",
-    "@omnibranch/contracts": "workspace:*",
-    "@omnibranch/installer": "workspace:*",
-    "@omnibranch/platform": "workspace:*",
-    "@omnibranch/runtime": "workspace:*",
-    "commander": "15.0.0"
   }
 }

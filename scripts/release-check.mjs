@@ -13,11 +13,22 @@ const required = [
   'docs/LIMITATIONS.md',
   'docs/RELEASE.md',
   'schemas/v1alpha1/workspace-plan.schema.json',
+  'schemas/v1/skill-install.schema.json',
   'skills/omnibranch/SKILL.md',
+  'apps/cli/package.json',
+  '.claude-plugin/marketplace.json',
+  'distribution/claude-plugin/.claude-plugin/plugin.json',
 ];
 await Promise.all(required.map((file) => access(file)));
 const manifest = JSON.parse(await readFile('package.json', 'utf8'));
-if (manifest.version !== '0.1.0' || manifest.packageManager !== 'pnpm@11.11.0')
+const packageManifest = JSON.parse(await readFile('apps/cli/package.json', 'utf8'));
+if (
+  manifest.version !== '0.2.0' ||
+  manifest.packageManager !== 'pnpm@11.11.0' ||
+  packageManifest.name !== 'omnibranch' ||
+  packageManifest.version !== '0.2.0' ||
+  JSON.stringify(packageManifest.dependencies) !== JSON.stringify({ 'better-sqlite3': '12.11.1' })
+)
   throw new Error('Release identity or package manager drift');
 const schema = JSON.parse(await readFile('schemas/v1alpha1/workspace-plan.schema.json', 'utf8'));
 if (schema.$schema !== 'https://json-schema.org/draft/2020-12/schema')

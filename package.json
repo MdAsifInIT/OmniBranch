@@ -22,9 +22,13 @@
     "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "skill:validate": "node skills/omnibranch/scripts/validate-skill.mjs",
     "security:scan": "node scripts/security-scan.mjs",
+    "audit:prod": "pnpm audit --prod --audit-level low",
     "release:check": "node scripts/release-check.mjs",
-    "release:artifacts": "node scripts/generate-sbom.mjs && node scripts/generate-checksums.mjs",
-    "verify:release": "pnpm verify && pnpm skill:validate && pnpm security:scan && pnpm release:check && pnpm release:artifacts",
+    "package:pack:dry": "node scripts/package-pack.mjs --dry-run",
+    "package:pack": "node scripts/package-pack.mjs",
+    "package:verify": "pnpm --filter omnibranch build && pnpm package:pack:dry && pnpm package:pack && node scripts/verify-package.mjs",
+    "release:artifacts": "node scripts/build-release-archives.mjs && node scripts/generate-sbom.mjs && node scripts/generate-checksums.mjs",
+    "verify:release": "pnpm verify && pnpm skill:validate && pnpm security:scan && pnpm audit:prod && pnpm release:check && pnpm package:verify && pnpm release:artifacts",
     "omnibranch": "node apps/cli/dist/main.cjs"
   },
   "dependencies": {
@@ -39,6 +43,11 @@
     "yaml": "2.9.0"
   },
   "devDependencies": {
+    "@omnibranch/adapters": "workspace:*",
+    "@omnibranch/contracts": "workspace:*",
+    "@omnibranch/installer": "workspace:*",
+    "@omnibranch/platform": "workspace:*",
+    "@omnibranch/runtime": "workspace:*",
     "@eslint/js": "10.0.1",
     "@types/better-sqlite3": "7.6.13",
     "@types/node": "22.20.1",

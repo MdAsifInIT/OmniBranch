@@ -1,10 +1,10 @@
 /* global console, process */
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const root = process.cwd();
-const manifest = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8'));
-const dependencies = Object.entries({ ...manifest.dependencies, ...manifest.devDependencies })
+const manifest = JSON.parse(await readFile(path.join(root, 'apps', 'cli', 'package.json'), 'utf8'));
+const dependencies = Object.entries(manifest.dependencies ?? {})
   .sort(([left], [right]) => left.localeCompare(right))
   .map(([name, version]) => ({
     type: 'library',
@@ -21,6 +21,10 @@ const sbom = {
   components: dependencies,
 };
 await mkdir(path.join(root, 'artifacts'), { recursive: true });
+for (const file of await readdir(path.join(root, 'artifacts'))) {
+  if (file.endsWith('.sbom.json') && file !== `omnibranch-${manifest.version}.sbom.json`)
+    await rm(path.join(root, 'artifacts', file), { force: true });
+}
 await writeFile(
   path.join(root, 'artifacts', `omnibranch-${manifest.version}.sbom.json`),
   `${JSON.stringify(sbom, null, 2)}\n`,

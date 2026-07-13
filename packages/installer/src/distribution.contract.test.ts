@@ -41,6 +41,11 @@ describe('provider distribution contracts', () => {
       name: 'omnibranch-tools',
       plugins: [{ source: './distribution/claude-plugin', version: '0.2.0' }],
     });
+    for (const script of ['generate-layouts.mjs', 'validate-skill.mjs']) {
+      expect(await readFile(path.join(canonicalRoot, 'scripts', script), 'utf8')).toMatch(
+        /^#!\/usr\/bin\/env node\r?\n/,
+      );
+    }
   });
 });
 

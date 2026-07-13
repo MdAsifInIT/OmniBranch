@@ -4,6 +4,12 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      publish_npm:
+        description: Publish the verified npm tarball with provenance
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -33,3 +39,23 @@ jobs:
           name: omnibranch-${{ github.ref_name }}
           path: artifacts/
           if-no-files-found: error
+
+  publish-npm:
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_npm == true
+    needs: build-artifacts
+    runs-on: ubuntu-latest
+    environment: npm-production
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: omnibranch-${{ github.ref_name }}
+          path: artifacts
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - name: Publish verified tarball with provenance
+        run: npm publish artifacts/omnibranch-0.2.0.tgz --provenance --access public

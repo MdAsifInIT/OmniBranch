@@ -1,10 +1,12 @@
 # Rollback
 
-1. Stop workers; do not rewrite branches or delete worktrees.
-2. Preserve events, reports, artifacts, and the current binary/source revision.
-3. Restore the prior signed source revision and its lockfile.
-4. Restore configuration compatible with that revision.
-5. Rebuild SQLite from the preserved authoritative JSONL.
-6. Run doctor, configuration validation, and reconciliation in dry-run mode.
+Restore the latest verified installer backup:
 
-If the older runtime rejects a newer event schema, remain stopped and use an explicit forward migration. Never truncate the event log to force rollback.
+```sh
+omnibranch skill rollback --target agents --scope user --json
+omnibranch skill doctor --scope user --json
+```
+
+Rollback is available only when the active receipt references an intact backup. Modified managed files are refused unless `--force` is explicit. `uninstall` removes only receipt-owned files and keeps the removed version as the latest rollback backup.
+
+For runtime rollback, stop workers, preserve events/reports/artifacts, restore a compatible signed version, rebuild SQLite from authoritative JSONL, and reconcile in dry-run mode. Never truncate the event log or rewrite Git history to force rollback.

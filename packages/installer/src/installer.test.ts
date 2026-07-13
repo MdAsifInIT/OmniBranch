@@ -112,6 +112,25 @@ describe('SkillInstaller target resolution', () => {
 });
 
 describe('SkillInstaller lifecycle', () => {
+  it('runs the managed lifecycle across every user provider in one transaction set', async () => {
+    const { payload, installer } = await fixture();
+    const request = { target: 'all' as const, scope: 'user' as const, dryRun: false };
+    await expect(installer.install(request)).resolves.toHaveLength(5);
+    expect(await installer.status('all', 'user')).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ target: ['codex'], managed: true }),
+        expect.objectContaining({ target: ['claude'], managed: true }),
+        expect.objectContaining({ target: ['opencode'], managed: true }),
+        expect.objectContaining({ target: ['antigravity'], managed: true }),
+        expect.objectContaining({ target: ['agents'], managed: true }),
+      ]),
+    );
+    await writeFile(path.join(payload, 'references', 'policy.md'), '# Provider update\n');
+    await expect(installer.update(request)).resolves.toHaveLength(5);
+    await expect(installer.uninstall(request)).resolves.toHaveLength(5);
+    await expect(installer.rollback(request)).resolves.toHaveLength(5);
+  });
+
   it('installs, reports, updates, uninstalls, and rolls back managed evidence', async () => {
     const { home, payload, installer } = await fixture(['agents']);
     const request = { target: 'agents' as const, scope: 'user' as const, dryRun: false };
