@@ -1,5 +1,7 @@
 # Release And Roadmap
 
+> **Historical roadmap:** The 0.1 milestones below are preserved as release history. For the verified 0.2 package process, use the current [Release runbook](RELEASE.md).
+
 This roadmap separates implementation checkpoints from public compatibility promises. The first stable `0.1.0` includes the local Skill Loop, GitHub integration, core AI adapters, and the distributable OmniBranch Skill.
 
 ## 1. Release Discipline

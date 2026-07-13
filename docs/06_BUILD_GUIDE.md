@@ -1,5 +1,7 @@
 # Build Guide
 
+> **Reference status:** This document records the original implementation decomposition. For the current repository layout and supported commands, use [Development](DEVELOPMENT.md) and the package READMEs.
+
 This guide takes OmniBranch from an empty directory to a tested local vertical slice. Build the deterministic control plane before connecting a real AI engine or remote SCM provider.
 
 ## 1. Prerequisites

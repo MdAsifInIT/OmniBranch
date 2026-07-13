@@ -1,5 +1,7 @@
 # OmniBranch Architecture
 
+> **Reference status:** This is the original normative architecture model. The implemented 0.2 package map and data flow are documented in [Architecture](ARCHITECTURE.md); illustrative package names below are bounded contexts, not claims that each directory exists.
+
 ## 1. Purpose
 
 OmniBranch is a cross-platform TypeScript/Node 22 monorepo for deterministic orchestration of parallel development work across branches, worktrees, validation pipelines, and optional AI-assisted planning surfaces.

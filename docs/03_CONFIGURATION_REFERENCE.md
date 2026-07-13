@@ -1,5 +1,7 @@
 # OmniBranch Configuration Reference
 
+> **Reference status:** This is the detailed `v1alpha1` design reference. Use [Configuration](CONFIGURATION.md) for a verified minimal plan and current defaults.
+
 ## 1. Status and Scope
 
 This document defines the normative YAML configuration model for OmniBranch. The configuration targets a TypeScript/Node 22 runtime and is intended to be validated by a JSON Schema plus semantic validation passes.
@@ -104,7 +106,7 @@ ownership:
     backend-core:
       globs:
         - backend/core/**
-        - packages/core/**
+        - packages/runtime/**
       lanes:
         - routine
         - high-review
@@ -116,7 +118,7 @@ ownership:
     shared-contracts:
       globs:
         - packages/contracts/**
-        - packages/config/**
+        - packages/installer/**
       lanes:
         - routine
       requiresApproval: true
@@ -147,8 +149,8 @@ commands:
   report:
     - id: summary
       run:
-        windows: pnpm exec omnibranch report --format markdown
-        posix: pnpm exec omnibranch report --format markdown
+        windows: pnpm omnibranch -- report --campaign example-campaign --json
+        posix: pnpm omnibranch -- report --campaign example-campaign --json
 
 policies:
   defaultAction: require_approval
