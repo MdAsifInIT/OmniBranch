@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">OmniBranch icon</title>
+  <desc id="desc">A luminous circular branch network forming the letter O.</desc>
+  <defs>
+    <linearGradient id="ring" x1="36" y1="32" x2="220" y2="224" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#818CF8"/>
+      <stop offset="0.48" stop-color="#6366F1"/>
+      <stop offset="1" stop-color="#22D3EE"/>
+    </linearGradient>
+    <radialGradient id="core" cx="0" cy="0" r="1" gradientTransform="translate(93 73) rotate(51) scale(177)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1E1B4B"/>
+      <stop offset="1" stop-color="#080B1A"/>
+    </radialGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect x="12" y="12" width="232" height="232" rx="62" fill="url(#core)"/>
+  <path d="M188 51A91 91 0 1 0 211 174" fill="none" stroke="url(#ring)" stroke-width="17" stroke-linecap="round"/>
+  <path d="M72 88h37c13 0 24 11 24 24v33c0 13 11 24 24 24h30M133 112l36-36h25M133 145l-34 34H73" fill="none" stroke="url(#ring)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
+  <g fill="#E0F2FE" stroke="#6366F1" stroke-width="6">
+    <circle cx="72" cy="88" r="10"/><circle cx="194" cy="76" r="10"/><circle cx="187" cy="169" r="10"/><circle cx="73" cy="179" r="10"/>
+  </g>
+  <circle cx="133" cy="128" r="13" fill="#22D3EE" stroke="#C7D2FE" stroke-width="5"/>
+</svg>

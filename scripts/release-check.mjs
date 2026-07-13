@@ -12,6 +12,11 @@ const required = [
   'docs/COMPATIBILITY.md',
   'docs/LIMITATIONS.md',
   'docs/RELEASE.md',
+  'docs/assets/brand/omnibranch-icon.svg',
+  'docs/assets/brand/omnibranch-logo-light.svg',
+  'docs/assets/brand/omnibranch-logo-dark.svg',
+  'docs/assets/brand/omnibranch-logo-512.png',
+  'docs/assets/brand/omnibranch-logo-1024.png',
   'schemas/v1alpha1/workspace-plan.schema.json',
   'schemas/v1/skill-install.schema.json',
   'skills/omnibranch/SKILL.md',
@@ -27,6 +32,7 @@ if (
   manifest.packageManager !== 'pnpm@11.11.0' ||
   packageManifest.name !== 'omnibranch' ||
   packageManifest.version !== '0.2.0' ||
+  !packageManifest.files.includes('docs/assets/brand/') ||
   JSON.stringify(packageManifest.dependencies) !== JSON.stringify({ 'better-sqlite3': '12.11.1' })
 )
   throw new Error('Release identity or package manager drift');

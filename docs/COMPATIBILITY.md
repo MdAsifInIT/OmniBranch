@@ -2,16 +2,16 @@
 
 This matrix separates implemented contracts from live provider verification.
 
-| Surface | Supported contract | Local/offline evidence | External evidence |
-| --- | --- | --- | --- |
-| Node.js | `>=22` release target | Build, package, and smoke tests | Windows/macOS/Linux Node 22 CI definition |
-| Git | Argument-array backend with worktrees | Temporary-repository integration tests | Host Git required |
-| Codex | CLI adapter and user skill target | Fixture contracts and local skill lifecycle | Live contract depends on installed version |
-| Claude Code | CLI adapter, user/project skill, Claude plugin | Fixture and layout contracts | Live engine absent on this host |
-| OpenCode | Compatibility adapter and user/project skill | Fixture and layout contracts | Live engine absent on this host |
-| Antigravity | CLI probe, guided IDE handoff, user/project skill | Fixture and layout contracts | Live engine absent; IDE remains guided |
-| Generic Agent Skills | User/project skill target | Full installer lifecycle | No provider executable required |
-| GitHub | Octokit SCM adapter | Fake/contract coverage | Sandbox writes require credentials and approval |
+| Surface              | Supported contract                                | Local/offline evidence                      | External evidence                               |
+| -------------------- | ------------------------------------------------- | ------------------------------------------- | ----------------------------------------------- |
+| Node.js              | `>=22` release target                             | Build, package, and smoke tests             | Windows/macOS/Linux Node 22 CI definition       |
+| Git                  | Argument-array backend with worktrees             | Temporary-repository integration tests      | Host Git required                               |
+| Codex                | CLI adapter and user skill target                 | Fixture contracts and local skill lifecycle | Live contract depends on installed version      |
+| Claude Code          | CLI adapter, user/project skill, Claude plugin    | Fixture and layout contracts                | Live engine absent on this host                 |
+| OpenCode             | Compatibility adapter and user/project skill      | Fixture and layout contracts                | Live engine absent on this host                 |
+| Antigravity          | CLI probe, guided IDE handoff, user/project skill | Fixture and layout contracts                | Live engine absent; IDE remains guided          |
+| Generic Agent Skills | User/project skill target                         | Full installer lifecycle                    | No provider executable required                 |
+| GitHub               | Octokit SCM adapter                               | Fake/contract coverage                      | Sandbox writes require credentials and approval |
 
 ## Compatibility rules
 

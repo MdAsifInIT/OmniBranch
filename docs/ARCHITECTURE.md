@@ -26,15 +26,15 @@ flowchart TD
 
 ## Package responsibilities
 
-| Package | Responsibility |
-| --- | --- |
-| `apps/cli` | Operator commands, stable JSON envelope, composition, and public npm bundle |
-| `packages/contracts` | Branded identifiers, lifecycle/status types, ports, evidence records, and installer contracts |
-| `packages/platform` | Clock/ID abstractions, process execution, logging, atomic files, locks, paths, and redaction |
-| `packages/runtime` | Configuration, events, projections, Git backend, scheduling, ownership, policy, validation, and local campaign service |
-| `packages/adapters` | Mock, GitHub, Codex, Claude Code, OpenCode, and Antigravity adapter implementations |
-| `packages/installer` | Provider detection, plans, receipts, backups, recovery journals, and contained skill activation |
-| `packages/test-kit` | Deterministic fixtures and shared test helpers |
+| Package              | Responsibility                                                                                                         |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `apps/cli`           | Operator commands, stable JSON envelope, composition, and public npm bundle                                            |
+| `packages/contracts` | Branded identifiers, lifecycle/status types, ports, evidence records, and installer contracts                          |
+| `packages/platform`  | Clock/ID abstractions, process execution, logging, atomic files, locks, paths, and redaction                           |
+| `packages/runtime`   | Configuration, events, projections, Git backend, scheduling, ownership, policy, validation, and local campaign service |
+| `packages/adapters`  | Mock, GitHub, Codex, Claude Code, OpenCode, and Antigravity adapter implementations                                    |
+| `packages/installer` | Provider detection, plans, receipts, backups, recovery journals, and contained skill activation                        |
+| `packages/test-kit`  | Deterministic fixtures and shared test helpers                                                                         |
 
 The private packages are bundled into the public `omnibranch` package. Only `better-sqlite3@12.11.1` remains a runtime dependency of the published manifest.
 
@@ -60,17 +60,17 @@ The private packages are bundled into the public `omnibranch` package. Only `bet
 
 ## Key abstractions
 
-| Abstraction | Role | Location |
-| --- | --- | --- |
-| `EventStore` | Ordered append/read contract for canonical events | `packages/contracts/src/index.ts` |
-| `ProjectionStore` | Rebuildable query state contract | `packages/contracts/src/index.ts` |
-| `GitBackend` | Typed, containment-aware Git/worktree operations | `packages/contracts/src/index.ts` |
-| `Scheduler` | Deterministic ready-work selection | `packages/contracts/src/index.ts` |
-| `PolicyEngine` | Deny-first action evaluation and approval evidence | `packages/contracts/src/index.ts` |
-| `ValidationRunner` | Typed validation evidence production | `packages/contracts/src/index.ts` |
-| `AiEngineAdapter` | Shared engine lifecycle and normalized results | `packages/contracts/src/index.ts` |
-| `SkillInstaller` | Receipt-backed universal skill lifecycle | `packages/installer/src/index.ts` |
-| `LocalCampaignService` | Offline campaign vertical slice | `packages/runtime/src/service.ts` |
+| Abstraction            | Role                                               | Location                           |
+| ---------------------- | -------------------------------------------------- | ---------------------------------- |
+| `EventStore`           | Ordered append/read contract for canonical events  | `packages/contracts/src/index.ts`  |
+| `ProjectionStore`      | Rebuildable query state contract                   | `packages/contracts/src/index.ts`  |
+| `GitBackend`           | Typed, containment-aware Git/worktree operations   | `packages/contracts/src/index.ts`  |
+| `Scheduler`            | Deterministic ready-work selection                 | `packages/contracts/src/index.ts`  |
+| `PolicyEngine`         | Deny-first action evaluation and approval evidence | `packages/contracts/src/index.ts`  |
+| `ValidationRunner`     | Typed validation evidence production               | `packages/contracts/src/index.ts`  |
+| `AiEngineAdapter`      | Shared engine lifecycle and normalized results     | `packages/contracts/src/index.ts`  |
+| `SkillInstaller`       | Receipt-backed universal skill lifecycle           | `packages/installer/src/index.ts`  |
+| `LocalCampaignService` | Offline campaign vertical slice                    | `packages/runtime/src/campaign.ts` |
 
 ## Deterministic invariants
 
@@ -84,15 +84,15 @@ The private packages are bundled into the public `omnibranch` package. Only `bet
 
 ## Failure and recovery boundaries
 
-| Failure | Recovery behavior |
-| --- | --- |
-| Process termination during event/projection work | Replay canonical events and rebuild projections |
-| Torn installer activation | Inspect the recovery journal, validate contained paths, restore or finalize deterministically |
-| Stale lease or worker | Expire or supersede only with persisted evidence; reject stale results |
-| Orphaned worktree or lock | Reconcile Git/filesystem state before cleanup |
-| External ref movement | Fail the expected-ref guard and require reconciliation |
-| Missing/unknown engine controls | Downgrade to guided mode |
-| Unavailable required validation | Keep the gate unsatisfied |
+| Failure                                          | Recovery behavior                                                                             |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| Process termination during event/projection work | Replay canonical events and rebuild projections                                               |
+| Torn installer activation                        | Inspect the recovery journal, validate contained paths, restore or finalize deterministically |
+| Stale lease or worker                            | Expire or supersede only with persisted evidence; reject stale results                        |
+| Orphaned worktree or lock                        | Reconcile Git/filesystem state before cleanup                                                 |
+| External ref movement                            | Fail the expected-ref guard and require reconciliation                                        |
+| Missing/unknown engine controls                  | Downgrade to guided mode                                                                      |
+| Unavailable required validation                  | Keep the gate unsatisfied                                                                     |
 
 ## Repository layout
 

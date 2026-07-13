@@ -80,13 +80,13 @@ See the [installation guide](docs/INSTALLATION.md) for source builds, project sc
 
 ## Supported skill targets
 
-| Provider | User scope | Project scope | Verification |
-| --- | --- | --- | --- |
-| Codex | `$CODEX_HOME/skills/omnibranch` or `~/.codex/skills/omnibranch` | Use generic target | Local contract |
-| Claude Code | `~/.claude/skills/omnibranch` | `.claude/skills/omnibranch` | Fixture contract |
-| OpenCode | `~/.config/opencode/skills/omnibranch` | `.opencode/skills/omnibranch` | Fixture contract |
-| Antigravity | `~/.gemini/config/skills/omnibranch` | `.agents/skills/omnibranch` | Fixture contract; IDE handoff is guided |
-| Generic Agent Skills | `~/.agents/skills/omnibranch` | `.agents/skills/omnibranch` | Full local lifecycle |
+| Provider             | User scope                                                      | Project scope                 | Verification                            |
+| -------------------- | --------------------------------------------------------------- | ----------------------------- | --------------------------------------- |
+| Codex                | `$CODEX_HOME/skills/omnibranch` or `~/.codex/skills/omnibranch` | Use generic target            | Local contract                          |
+| Claude Code          | `~/.claude/skills/omnibranch`                                   | `.claude/skills/omnibranch`   | Fixture contract                        |
+| OpenCode             | `~/.config/opencode/skills/omnibranch`                          | `.opencode/skills/omnibranch` | Fixture contract                        |
+| Antigravity          | `~/.gemini/config/skills/omnibranch`                            | `.agents/skills/omnibranch`   | Fixture contract; IDE handoff is guided |
+| Generic Agent Skills | `~/.agents/skills/omnibranch`                                   | `.agents/skills/omnibranch`   | Full local lifecycle                    |
 
 Project-scoped Codex discovery is intentionally unsupported. Use `--target agents --scope project` instead.
 
@@ -151,16 +151,16 @@ Read [Security and policy](docs/05_SECURITY_AND_POLICY.md) and [SECURITY.md](SEC
 
 Start at the [documentation hub](docs/README.md).
 
-| Goal | Guide |
-| --- | --- |
-| Install and run the first command | [Getting started](docs/GETTING-STARTED.md) |
-| Understand components and data flow | [Architecture](docs/ARCHITECTURE.md) |
-| Configure a WorkspacePlan | [Configuration](docs/CONFIGURATION.md) |
-| Explore practical commands | [Examples](docs/EXAMPLES.md) |
-| Set up a contributor environment | [Development](docs/DEVELOPMENT.md) |
-| Run or extend the test suite | [Testing](docs/TESTING.md) |
-| Upgrade or recover an installation | [Upgrade](docs/UPGRADE.md) · [Rollback](docs/ROLLBACK.md) |
-| Check provider and runtime support | [Compatibility](docs/COMPATIBILITY.md) · [Limitations](docs/LIMITATIONS.md) |
+| Goal                                | Guide                                                                       |
+| ----------------------------------- | --------------------------------------------------------------------------- |
+| Install and run the first command   | [Getting started](docs/GETTING-STARTED.md)                                  |
+| Understand components and data flow | [Architecture](docs/ARCHITECTURE.md)                                        |
+| Configure a WorkspacePlan           | [Configuration](docs/CONFIGURATION.md)                                      |
+| Explore practical commands          | [Examples](docs/EXAMPLES.md)                                                |
+| Set up a contributor environment    | [Development](docs/DEVELOPMENT.md)                                          |
+| Run or extend the test suite        | [Testing](docs/TESTING.md)                                                  |
+| Upgrade or recover an installation  | [Upgrade](docs/UPGRADE.md) · [Rollback](docs/ROLLBACK.md)                   |
+| Check provider and runtime support  | [Compatibility](docs/COMPATIBILITY.md) · [Limitations](docs/LIMITATIONS.md) |
 
 ## Contributing
 

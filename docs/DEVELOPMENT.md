@@ -37,20 +37,20 @@ The dependency direction is documented in [Architecture](ARCHITECTURE.md). Keep 
 
 ## Commands
 
-| Command | Purpose |
-| --- | --- |
-| `pnpm format` | Rewrite supported files with Prettier |
-| `pnpm format:check` | Check formatting without mutation |
-| `pnpm lint` | Run ESLint with zero warnings allowed |
-| `pnpm typecheck` | Build TypeScript project references for type checking |
-| `pnpm test` | Run every Vitest project |
-| `pnpm build` | Compile packages, generate skill/package assets, and bundle the CLI |
-| `pnpm docs:check` | Validate documentation, assets, links, headings, and CLI examples |
-| `pnpm verify` | Run formatting, docs, lint, types, tests, and build |
+| Command               | Purpose                                                             |
+| --------------------- | ------------------------------------------------------------------- |
+| `pnpm format`         | Rewrite supported files with Prettier                               |
+| `pnpm format:check`   | Check formatting without mutation                                   |
+| `pnpm lint`           | Run ESLint with zero warnings allowed                               |
+| `pnpm typecheck`      | Build TypeScript project references for type checking               |
+| `pnpm test`           | Run every Vitest project                                            |
+| `pnpm build`          | Compile packages, generate skill/package assets, and bundle the CLI |
+| `pnpm docs:check`     | Validate documentation, assets, links, headings, and CLI examples   |
+| `pnpm verify`         | Run formatting, docs, lint, types, tests, and build                 |
 | `pnpm verify:release` | Run the complete package, security, audit, artifact, and smoke gate |
-| `pnpm skill:validate` | Verify the canonical skill and provider copies |
-| `pnpm security:scan` | Scan source/distribution roots for forbidden patterns |
-| `pnpm package:verify` | Pack, install, and exercise the npm tarball in an empty prefix |
+| `pnpm skill:validate` | Verify the canonical skill and provider copies                      |
+| `pnpm security:scan`  | Scan source/distribution roots for forbidden patterns               |
+| `pnpm package:verify` | Pack, install, and exercise the npm tarball in an empty prefix      |
 
 ## Code style
 

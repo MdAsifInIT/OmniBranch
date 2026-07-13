@@ -21,6 +21,7 @@
   "files": [
     "dist/main.cjs",
     "skill/",
+    "docs/assets/brand/",
     "README.md",
     "LICENSE"
   ],

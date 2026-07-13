@@ -1,3 +1,5 @@
 **/dist/**
 **/node_modules/**
 skills/omnibranch/generated/**
+**/*.svg
+**/*.png

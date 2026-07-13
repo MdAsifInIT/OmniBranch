@@ -49,13 +49,13 @@ omnibranch skill targets --scope user --json
 omnibranch skill plan --target auto --scope user --dry-run --json
 ```
 
-| Target | User destination | Project destination |
-| --- | --- | --- |
-| `codex` | `$CODEX_HOME/skills/omnibranch`, otherwise `~/.codex/skills/omnibranch` | Unsupported; use `agents` |
-| `claude` | `~/.claude/skills/omnibranch` | `<project>/.claude/skills/omnibranch` |
-| `opencode` | `~/.config/opencode/skills/omnibranch` | `<project>/.opencode/skills/omnibranch` |
-| `antigravity` | `~/.gemini/config/skills/omnibranch` | `<project>/.agents/skills/omnibranch` |
-| `agents` | `~/.agents/skills/omnibranch` | `<project>/.agents/skills/omnibranch` |
+| Target        | User destination                                                        | Project destination                     |
+| ------------- | ----------------------------------------------------------------------- | --------------------------------------- |
+| `codex`       | `$CODEX_HOME/skills/omnibranch`, otherwise `~/.codex/skills/omnibranch` | Unsupported; use `agents`               |
+| `claude`      | `~/.claude/skills/omnibranch`                                           | `<project>/.claude/skills/omnibranch`   |
+| `opencode`    | `~/.config/opencode/skills/omnibranch`                                  | `<project>/.opencode/skills/omnibranch` |
+| `antigravity` | `~/.gemini/config/skills/omnibranch`                                    | `<project>/.agents/skills/omnibranch`   |
+| `agents`      | `~/.agents/skills/omnibranch`                                           | `<project>/.agents/skills/omnibranch`   |
 
 `auto` installs detected providers; with no detection it installs `agents` and warns. `all` selects every supported destination and deduplicates shared project paths.
 

@@ -71,38 +71,38 @@ reporting:
 
 ## Top-level sections
 
-| Section | Purpose |
-| --- | --- |
-| `metadata` | Stable workspace identity, owners, descriptions, and tags |
-| `runtime` | Workspace, temporary, worktree, shell, concurrency, and lease settings |
-| `branchTopology` | Trunk, integration, lane, and attempt branch namespaces |
-| `lanes` | Priority, concurrency, branch class, and approval behavior |
-| `ownership` | Repository-relative path globs assigned to lanes |
-| `commands` | Cross-platform prepare, validate, or reporting commands |
-| `policies` | Default action, named packs, and deterministic rules |
-| `adapters` | Provider-specific configuration; structurally open in v1alpha1 |
-| `state` | Canonical JSONL and rebuildable SQLite paths |
-| `reporting` | Output formats, location, telemetry, and redaction |
-| `secrets` | Allowed secret-reference mechanisms and named references |
+| Section          | Purpose                                                                |
+| ---------------- | ---------------------------------------------------------------------- |
+| `metadata`       | Stable workspace identity, owners, descriptions, and tags              |
+| `runtime`        | Workspace, temporary, worktree, shell, concurrency, and lease settings |
+| `branchTopology` | Trunk, integration, lane, and attempt branch namespaces                |
+| `lanes`          | Priority, concurrency, branch class, and approval behavior             |
+| `ownership`      | Repository-relative path globs assigned to lanes                       |
+| `commands`       | Cross-platform prepare, validate, or reporting commands                |
+| `policies`       | Default action, named packs, and deterministic rules                   |
+| `adapters`       | Provider-specific configuration; structurally open in v1alpha1         |
+| `state`          | Canonical JSONL and rebuildable SQLite paths                           |
+| `reporting`      | Output formats, location, telemetry, and redaction                     |
+| `secrets`        | Allowed secret-reference mechanisms and named references               |
 
 ## Defaults
 
-| Setting | Default |
-| --- | --- |
-| `runtime.nodeVersion` | `22` |
-| `runtime.dryRunDefault` | `true` |
-| `runtime.globalConcurrency` | `1` |
-| `runtime.reconciliationInterval` | `30s` |
-| `runtime.shell.windows` / `.posix` | `powershell` / `bash` |
-| `runtime.lease.ttl` | `15m` |
-| `runtime.lease.heartbeatInterval` | `30s` |
-| `runtime.lease.gracePeriod` | `90s` |
-| `ownership.defaultMode` | `exclusive` |
-| `policies.defaultAction` | `require_approval` |
-| `state.snapshots.enabled` / `.interval` | `true` / `250` |
-| `reporting.formats` | `[markdown]` |
-| `reporting.includeTelemetry` | `false` |
-| `reporting.redact.secrets` / `.envValues` | `true` / `true` |
+| Setting                                   | Default               |
+| ----------------------------------------- | --------------------- |
+| `runtime.nodeVersion`                     | `22`                  |
+| `runtime.dryRunDefault`                   | `true`                |
+| `runtime.globalConcurrency`               | `1`                   |
+| `runtime.reconciliationInterval`          | `30s`                 |
+| `runtime.shell.windows` / `.posix`        | `powershell` / `bash` |
+| `runtime.lease.ttl`                       | `15m`                 |
+| `runtime.lease.heartbeatInterval`         | `30s`                 |
+| `runtime.lease.gracePeriod`               | `90s`                 |
+| `ownership.defaultMode`                   | `exclusive`           |
+| `policies.defaultAction`                  | `require_approval`    |
+| `state.snapshots.enabled` / `.interval`   | `true` / `250`        |
+| `reporting.formats`                       | `[markdown]`          |
+| `reporting.includeTelemetry`              | `false`               |
+| `reporting.redact.secrets` / `.envValues` | `true` / `true`       |
 
 ## Template tokens
 
@@ -132,11 +132,11 @@ After JSON Schema validation, OmniBranch rejects:
 
 The core WorkspacePlan does not require environment variables for local mock execution. Supported runtime variables are:
 
-| Variable | Required | Default | Purpose |
-| --- | --- | --- | --- |
-| `OMNIBRANCH_LOG_LEVEL` | No | `info` | Pino log level |
-| `CODEX_HOME` | No | `~/.codex` | Codex user-scope skill root |
-| `XDG_CONFIG_HOME` | No | `~/.config` | OpenCode configuration root |
+| Variable               | Required | Default     | Purpose                     |
+| ---------------------- | -------- | ----------- | --------------------------- |
+| `OMNIBRANCH_LOG_LEVEL` | No       | `info`      | Pino log level              |
+| `CODEX_HOME`           | No       | `~/.codex`  | Codex user-scope skill root |
+| `XDG_CONFIG_HOME`      | No       | `~/.config` | OpenCode configuration root |
 
 Provider credentials are needed only for the corresponding live adapter and must be supplied as scoped secret references. Never place credential values directly in the WorkspacePlan.
 

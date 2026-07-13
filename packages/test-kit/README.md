@@ -16,9 +16,11 @@ Keep fixtures small, deterministic, offline, and free of production credentials.
 
 ## Verify
 
+The package is type-checked directly and exercised by its consumers' suites:
+
 ```sh
-pnpm exec vitest run packages/test-kit/src
 pnpm typecheck
+pnpm test
 ```
 
 Part of the [OmniBranch monorepo](../../README.md).

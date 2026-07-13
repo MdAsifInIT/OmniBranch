@@ -31,7 +31,7 @@ Review:
 - `artifacts/omnibranch-0.2.0.sbom.json`
 - `artifacts/SHA256SUMS`
 
-Confirm `npm pack` contains only the allowlisted public manifest, license, README, bundled CLI, and canonical skill payload. The public manifest must contain only `better-sqlite3@12.11.1` as a runtime dependency.
+Confirm `npm pack` contains only the allowlisted public manifest, license, README, README brand assets, bundled CLI, and canonical skill payload. The public manifest must contain only `better-sqlite3@12.11.1` as a runtime dependency.
 
 ## External verification record
 

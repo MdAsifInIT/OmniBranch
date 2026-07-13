@@ -46,12 +46,12 @@ The release gate builds the bundled CLI, validates every skill layout, performs 
 
 ## Test organization
 
-| Suffix | Vitest project | Purpose |
-| --- | --- | --- |
-| `*.test.ts` | unit | State transitions, policy, ordering, serialization, normalization |
-| `*.integration.test.ts` | integration | Git/worktrees, JSONL/SQLite, CLI flows, process and filesystem behavior |
-| `*.contract.test.ts` | contracts | Adapter dispositions, schema/layout compatibility, generated provider equality |
-| `*.security.test.ts` | security | Hostile paths/arguments, secrets, stale authority, plugin trust, unsafe actions |
+| Suffix                  | Vitest project | Purpose                                                                         |
+| ----------------------- | -------------- | ------------------------------------------------------------------------------- |
+| `*.test.ts`             | unit           | State transitions, policy, ordering, serialization, normalization               |
+| `*.integration.test.ts` | integration    | Git/worktrees, JSONL/SQLite, CLI flows, process and filesystem behavior         |
+| `*.contract.test.ts`    | contracts      | Adapter dispositions, schema/layout compatibility, generated provider equality  |
+| `*.security.test.ts`    | security       | Hostile paths/arguments, secrets, stale authority, plugin trust, unsafe actions |
 
 Tests live beside their implementation under `apps/*/src` and `packages/*/src`. Shared Git and configuration fixtures live under `fixtures/`; reusable deterministic helpers live in `packages/test-kit`.
 
