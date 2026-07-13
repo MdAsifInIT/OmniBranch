@@ -19,7 +19,7 @@ updated: 2026-07-13
 - hypothesis: confirmed
 - test: build workspace package entry points with `pnpm typecheck` before the isolated Vitest invocation.
 - expecting: the isolated lifecycle tests resolve all private packages, followed by a successful release gate.
-- next_action: confirm the pushed three-OS GitHub Actions run.
+- next_action: confirm the follow-up three-OS GitHub Actions run.
 
 ## Evidence
 
@@ -33,15 +33,19 @@ updated: 2026-07-13
   observation: the CI-equivalent workspace build and isolated test sequence passed all 17 tests locally.
 - timestamp: 2026-07-13T08:47:27Z
   observation: the complete release gate passed all 59 tests, package verification, security checks, and artifact generation.
+- timestamp: 2026-07-13T08:18:19Z
+  observation: after workspace resolution was fixed, Ubuntu exposed that the installer fixture inherited the runner's `XDG_CONFIG_HOME`, while macOS passed the same isolated tests.
 
 ## Eliminated
 
 - hypothesis: operating-system-specific installer behavior
   reason: the same module-resolution failure occurs before installer behavior on every runner.
+- hypothesis: incorrect OpenCode destination mapping
+  reason: the production mapping correctly honors `XDG_CONFIG_HOME`; the test fixture failed to isolate that environment variable.
 
 ## Resolution
 
-- root_cause: the isolated CI test step ran before TypeScript project references built the private workspace packages exported from `dist/index.js`.
-- fix: add a `pnpm typecheck` workspace-entry-point build immediately after dependency installation and before isolated tests.
-- verification: 17 isolated tests and the complete release gate pass locally; GitHub three-OS confirmation follows the push.
-- files_changed: `.github/workflows/ci.yml`
+- root_cause: the isolated CI test step ran before TypeScript project references built private workspace packages, and its installer fixture inherited host-specific provider environment variables.
+- fix: build workspace entry points before isolated tests and give the fixture a complete temporary HOME, USERPROFILE, CODEX_HOME, and XDG_CONFIG_HOME environment.
+- verification: 17 isolated tests and the complete release gate pass locally; GitHub three-OS confirmation follows the follow-up push.
+- files_changed: `.github/workflows/ci.yml`, `packages/installer/src/installer.test.ts`

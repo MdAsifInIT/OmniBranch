@@ -31,7 +31,16 @@ async function fixture(
   await writeFile(path.join(payload, 'scripts', 'validate.mjs'), 'console.log("ok");\n');
   const installer = new SkillInstaller(
     payload,
-    { homeDirectory: home, detectedTargets },
+    {
+      homeDirectory: home,
+      detectedTargets,
+      env: {
+        HOME: home,
+        USERPROFILE: home,
+        CODEX_HOME: path.join(home, '.codex'),
+        XDG_CONFIG_HOME: path.join(home, '.config'),
+      },
+    },
     new FakeClock(new Date('2026-07-13T00:00:00Z')),
     new SequenceIdGenerator('install'),
   );
