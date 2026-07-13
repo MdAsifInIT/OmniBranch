@@ -26,6 +26,8 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Build workspace package entry points
+        run: pnpm typecheck
       - name: Isolated installer lifecycle tests
         run: pnpm exec vitest run apps/cli/src/skill-cli.test.ts packages/installer/src/installer.test.ts packages/installer/src/distribution.contract.test.ts
       - run: pnpm verify:release
