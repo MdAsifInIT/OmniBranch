@@ -1,77 +1,43 @@
-# Requirements: OmniBranch
+# Requirements: OmniBranch 0.2.0
 
-**Defined:** 2026-07-12
-**Core Value:** Repository correctness remains deterministic, auditable, and resumable while multiple workers operate concurrently.
+**Defined:** 2026-07-13
+**Core Value:** Install the same verified OmniBranch workflow safely across supported agent hosts without divergent skill content.
 
-## v1 Requirements
+## Installer Core
 
-### Foundation and Configuration
+- [ ] **INST-01**: Resolve Codex, Claude, OpenCode, Antigravity, and generic Agent Skills destinations for supported scopes.
+- [ ] **INST-02**: Produce deterministic installation plans and deduplicate shared destinations.
+- [ ] **INST-03**: Install and update atomically with canonical file hashes, receipts, backups, and recovery journals.
+- [ ] **INST-04**: Roll back and uninstall only managed files, refusing modified content unless explicitly forced.
+- [ ] **INST-05**: Reject unsupported scopes, traversal, junction/symlink escape, corrupt payloads, concurrent installers, and incomplete recovery.
 
-- [x] **BASE-01**: A clean checkout installs, formats, lints, type-checks, tests, and builds with a pinned toolchain.
-- [x] **CONF-01**: Users can initialize an unsupported Git repository idempotently without unexpected source changes.
-- [x] **CONF-02**: Users receive exact structural and semantic diagnostics for invalid WorkspacePlan YAML.
-- [x] **CONF-03**: Repository root, common Git directory, trunk, remotes, and worktrees are discovered safely.
+## Interfaces and Packaging
 
-### State and Git
+- [ ] **CLI-02**: Expose `skill targets|plan|install|status|update|doctor|rollback|uninstall` through the stable CLI envelope.
+- [ ] **PKG-01**: Build one public `omnibranch@0.2.0` Node 22 package with the CLI binary and explicit file allowlist.
+- [ ] **PKG-02**: Embed one canonical Agent Skill tree and generate provider layouts with real `SKILL.md` entrypoints.
+- [ ] **PKG-03**: Provide valid Codex UI metadata and a versioned Claude plugin/marketplace layout.
+- [ ] **PKG-04**: Install and exercise the packed npm tarball from an empty temporary prefix.
 
-- [x] **STATE-01**: Events append atomically with global ordering, stream concurrency, duplicate rejection, and no secrets.
-- [x] **STATE-02**: Deleting SQLite and replaying JSONL reproduces identical canonical projections.
-- [x] **GIT-01**: Branch and worktree mutations use expected-ref preconditions and are safe to retry after interruption.
-- [x] **GIT-02**: Cleanup refuses dirty, uncontained, or unrelated work.
+## Quality and Release
 
-### Orchestration and Safety
-
-- [x] **ORCH-01**: DAG scheduling is deterministic and respects dependencies and capacity limits.
-- [x] **ORCH-02**: Conflicting ownership scopes never receive simultaneous write leases.
-- [x] **ORCH-03**: Leases heartbeat, expire, supersede stale actors, and recover orphaned work safely.
-- [x] **SAFE-01**: Unknown, destructive, secret, and external mutation actions fail closed or require explicit approval.
-- [x] **VAL-01**: Required validation passes only on explicit `pass`; unavailable or malformed evidence blocks promotion.
-
-### Execution and Interfaces
-
-- [x] **CLI-01**: Every documented CLI command provides stable JSON output and mutations support `--dry-run`.
-- [x] **MOCK-01**: Two disjoint mock workers complete concurrently in isolated worktrees and resume after every mutation boundary.
-- [x] **SCM-01**: GitHub reads and dry-run writes work offline against fakes; approved sandbox writes are idempotent.
-- [x] **AI-01**: Codex and Claude implement the common adapter contract; unsupported capability downgrades safely.
-- [x] **AI-02**: OpenCode and Antigravity preserve assignment identity and evidence through execution or guided handoff.
-- [x] **SKILL-01**: The canonical OmniBranch skill validates, remains under 500 lines, and supports an independent safe fixture run.
-
-### Quality and Release
-
-- [x] **QUAL-01**: Unit, property, integration, concurrency, recovery, security, contract, golden, and E2E suites pass offline.
-- [ ] **QUAL-02**: Windows, macOS, and Linux CI pass on Node 22.
-- [x] **REL-01**: Installation, upgrade, rollback, SBOM, checksums, provenance, compatibility, and limitations are documented and automated without publishing.
-
-## v2 Requirements
-
-- **SCM-02**: Add GitLab, Bitbucket, and Azure DevOps providers.
-- **TEAM-01**: Add optional remote state synchronization and multi-operator coordination.
-- **UI-01**: Add a read-focused campaign dashboard.
-- **DAEMON-01**: Add explicit scheduled resume and bounded background operation.
+- [ ] **QUAL-03**: Unit, integration, security, contract, package, and isolated-home installer suites pass offline.
+- [ ] **REL-02**: Generate deterministic skill/plugin archives, SBOM, checksums, provenance configuration, and 0.2 documentation without publishing.
 
 ## Out of Scope
 
-| Feature                           | Reason                                              |
-| --------------------------------- | --------------------------------------------------- |
-| Production deployment agent       | Violates the bounded local-first 0.1 safety posture |
-| Automatic stable-branch promotion | Requires explicit human and policy approval         |
-| Unrestricted destructive Git      | Data-loss risk; denied by design                    |
-| Hosted control plane              | Core functionality must work locally                |
+| Feature                                  | Reason                                                               |
+| ---------------------------------------- | -------------------------------------------------------------------- |
+| Native standalone executables            | Node 22 remains the 0.2 runtime contract                             |
+| Automatic npm or marketplace publication | External mutation requires separate authorization                    |
+| Provider executable installation         | Installer manages OmniBranch, not third-party engines                |
+| Project-scoped Codex target              | Not a verified Codex discovery surface; use generic `.agents/skills` |
+| Cursor, Copilot, Cline certification     | Generic target may work, but official certification is deferred      |
 
 ## Traceability
 
-| Requirement                                | Phase   | Status   |
-| ------------------------------------------ | ------- | -------- |
-| BASE-01, CONF-01, CONF-02, CONF-03         | Phase 1 | Complete |
-| STATE-01, STATE-02, GIT-01, GIT-02         | Phase 2 | Complete |
-| ORCH-01, ORCH-02, ORCH-03, SAFE-01, VAL-01 | Phase 3 | Complete |
-| CLI-01, MOCK-01                            | Phase 4 | Complete |
-| SCM-01                                     | Phase 5 | Complete |
-| AI-01, AI-02, SKILL-01                     | Phase 6 | Pending  |
-| QUAL-01, QUAL-02, REL-01                   | Phase 7 | Pending  |
-
-**Coverage:** 21 v1 requirements, 21 mapped, 0 unmapped.
-
----
-
-_Requirements defined: 2026-07-12_
+| Requirement                   | Phase    |
+| ----------------------------- | -------- |
+| INST-01 through INST-05       | Phase 8  |
+| CLI-02, PKG-01 through PKG-03 | Phase 9  |
+| PKG-04, QUAL-03, REL-02       | Phase 10 |

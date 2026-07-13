@@ -1,32 +1,32 @@
 ---
 gsd_state_version: '1.0'
-status: implementation_complete_external_gates_pending
-milestone: 0.1.0
+status: executing
+milestone: 0.2.0
 progress:
-  total_phases: 7
-  completed_phases: 7
-  total_plans: 7
-  completed_plans: 7
-  percent: 100
+  total_phases: 3
+  completed_phases: 0
+  total_plans: 3
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-07-12)
+See: .planning/PROJECT.md (updated 2026-07-13)
 
 **Core value:** Repository correctness remains deterministic, auditable, and resumable while multiple workers operate concurrently.
-**Current focus:** External verification gates for 0.1.0
+**Current focus:** Phase 8 — Installer Contracts and Core
 
 ## Current Position
 
-Phase: 7 of 7 complete (Hardening and Release Readiness)
-Plan: 1 of 1 in current phase
-Status: Offline implementation complete; external gates pending
-Last activity: 2026-07-12 — Phase 7 offline release gate passed.
+Phase: 8 (1 of 3) — Installer Contracts and Core
+Plan: 0 of 1 in current phase
+Status: Executing the accepted 0.2.0 universal installer plan
+Last activity: 2026-07-13 — 0.2.0 milestone initialized.
 
-Progress: [██████████] 100%
+Progress: [░░░░░░░░░░] 0%
 
 ## Accumulated Context
 
@@ -34,10 +34,13 @@ Progress: [██████████] 100%
 
 - Runtime decisions normalize configuration `require_approval` to `approval_required`.
 - Node 22 is the release target; JSONL events are canonical; no daemon ships in 0.1.
+- Universal installation ships as one public `omnibranch@0.2.0` npm package.
+- Installer v1 supports Codex, Claude, OpenCode, Antigravity, and generic Agent Skills.
+- Node 22 remains required; no native standalone executable is included.
 
 ### Pending Todos
 
-None yet.
+- Implement installer core, CLI/package distribution, and package verification in phases 8-10.
 
 ### Blockers/Concerns
 
@@ -53,6 +56,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-07-12
-Stopped at: All implementation phases complete; external evidence gates remain.
+Last session: 2026-07-13
+Stopped at: 0.2.0 milestone initialized; Phase 8 in progress.
 Resume file: None

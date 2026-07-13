@@ -12,25 +12,26 @@ Repository correctness remains deterministic, auditable, and resumable while mul
 
 ### Validated
 
-(None yet — ship to validate.)
+- [x] OmniBranch 0.1.0 deterministic orchestration, state, Git safety, adapters, CLI, skill, and offline release gate.
 
 ### Active
 
-- [ ] Initialize and validate conservative repository-local configuration.
-- [ ] Execute and resume isolated DAG work with ownership, leases, policy, and evidence.
-- [ ] Integrate GitHub and supported AI engines through capability-driven adapters.
-- [ ] Ship a tested cross-platform CLI and concise OmniBranch skill.
+- [ ] Publish-ready single `omnibranch@0.2.0` Node 22 package without publishing it during implementation.
+- [ ] Install one canonical skill safely across Codex, Claude, OpenCode, Antigravity, and generic Agent Skills locations.
+- [ ] Support deterministic install, update, status, doctor, rollback, uninstall, recovery, and package verification.
 
 ### Out of Scope
 
 - Browser dashboard — deferred to 0.4.
 - Background daemon or scheduled service — deferred beyond 0.1.
-- GitLab, Bitbucket, and Azure DevOps writes — deferred to 0.2.
+- GitLab, Bitbucket, and Azure DevOps writes — deferred beyond the universal-installer milestone.
+- Native standalone binaries — deferred beyond 0.2.
+- Broader provider certification beyond the generic Agent Skills target — deferred.
 - Production deployment and unrestricted cloud mutation — explicitly prohibited.
 
 ## Context
 
-The repository currently contains the complete product blueprint and no implementation. The first release is local-first, GitHub-first, and built around a deterministic offline vertical slice before live provider integration.
+The repository contains the complete offline-verified 0.1.0 implementation. The 0.2.0 milestone packages that product and its canonical skill for safe multi-provider installation.
 
 ## Constraints
 
@@ -49,8 +50,11 @@ The repository currently contains the complete product blueprint and no implemen
 | Native Git through argument arrays | Preserve full Git behavior without shell injection   | — Pending |
 | Capability-driven adapters         | Provider surfaces evolve independently               | — Pending |
 | GitHub-first SCM                   | Prove a neutral contract against one provider        | — Pending |
-| No daemon or dashboard in 0.1      | Keep recovery explicit while state semantics mature  | — Pending |
+| No daemon or dashboard in 0.1      | Keep recovery explicit while state semantics mature  | Accepted  |
+| Single public npm package in 0.2   | Simplify CLI and skill distribution                  | Accepted  |
+| Canonical skill plus thin layouts  | Prevent provider-specific instruction drift          | Accepted  |
+| Node 22 installer runtime          | Avoid fragile native executable bundling             | Accepted  |
 
 ---
 
-_Last updated: 2026-07-12 after documentation ingest_
+_Last updated: 2026-07-13 for the 0.2.0 universal installer milestone_
