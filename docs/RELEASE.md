@@ -10,6 +10,28 @@ This runbook assembles and verifies release artifacts. Publication is a separate
 - Completed Windows, macOS, and Linux CI for the release commit
 - Protected `npm-production` GitHub environment for publication
 
+## One-time Repository & Account Setup
+
+Before publishing the package for the first time, you must configure your accounts and repository secrets:
+
+### 1. npm Account & Access Token
+
+You need an npm account with publishing rights to publish the package.
+
+1. Create an account at [npmjs.com](https://www.npmjs.com/) if you don't have one.
+2. Generate an **Automation** token at [npmjs.com/settings/~/tokens](https://www.npmjs.com/settings/~/tokens).
+3. In this repository on GitHub, go to **Settings → Environments** and create an environment named exactly `npm-production`.
+4. In this repository on GitHub, go to **Settings → Secrets and variables → Actions**, and add a new repository secret named `NODE_AUTH_TOKEN` containing your Automation token.
+
+### 2. GPG Tag Signing
+
+The release workflow strictly requires a signed Git tag to run (via `git verify-tag`). You must have a GPG key configured:
+
+1. Generate a GPG key if you don't have one: `gpg --full-generate-key`.
+2. Add the public key to your GitHub account under **Settings → SSH and GPG keys**.
+3. Tell Git about your signing key: `git config --global user.signingkey <KEY_ID>`.
+4. You can then sign tags using the `-s` flag (e.g. `git tag -s v0.2.0 -m "Release 0.2.0"`).
+
 ## Build and verify
 
 ```sh
