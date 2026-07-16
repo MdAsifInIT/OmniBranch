@@ -46,6 +46,10 @@ See the [installation guide](docs/INSTALLATION.md) for source builds, project sc
 
 ## Five-minute skill setup
 
+### What does the skill do?
+
+The OmniBranch skill is installed directly into your AI coding assistant (e.g., Antigravity, Claude Code, Codex). It teaches your AI how to orchestrate complex, parallel work in your repository using the OmniBranch CLI safely. It enforces a strict safety contract so the AI knows to always use isolated worktrees, prevent overlapping edits, and request your approval before mutating files or pushing code. Once installed, you can simply ask your AI to _"use OmniBranch to run a campaign for X"_, and the AI will handle the orchestration securely and deterministically.
+
 1. Inspect the supported destinations without changing anything:
 
    ```sh
