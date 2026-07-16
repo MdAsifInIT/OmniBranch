@@ -20,8 +20,6 @@
 
 OmniBranch helps maintainers coordinate multiple AI workers without making prompts or model output the source of truth. The CLI owns scheduling, Git isolation, path ownership, policy decisions, validation evidence, recovery, and reporting. Workers receive bounded assignments and operate in disposable worktrees.
 
-> **Release status:** `0.2.0` is implemented and release-verified in this repository, but the npm package has not been published. Use the checked-in tarball or build from source until an authorized registry release occurs.
-
 ## Why OmniBranch?
 
 - **Parallel without collisions.** Each task receives an isolated worktree and explicit repository-relative ownership.
@@ -32,15 +30,6 @@ OmniBranch helps maintainers coordinate multiple AI workers without making promp
 - **Local first.** Core orchestration, mock execution, tests, reports, and installer workflows work without a hosted OmniBranch service.
 
 ## Install
-
-### Try the verified local package
-
-```sh
-npm install --global ./artifacts/omnibranch-0.2.0.tgz
-omnibranch --version
-```
-
-### After an authorized npm release
 
 ```sh
 npm install --global omnibranch@0.2.0

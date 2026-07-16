@@ -14,14 +14,12 @@ The installer itself does not require provider credentials. Live GitHub or engin
 
 ## Install OmniBranch
 
-The npm package is release-ready but not yet published. Choose one current path.
+The npm package is published on the registry.
 
-### Verified repository tarball
+### Install via npm
 
 ```sh
-git clone https://github.com/MdAsifInIT/OmniBranch.git
-cd OmniBranch
-npm install --global ./artifacts/omnibranch-0.2.0.tgz
+npm install --global omnibranch@0.2.0
 omnibranch --version
 ```
 
@@ -36,8 +34,6 @@ pnpm install --frozen-lockfile
 pnpm build
 pnpm omnibranch -- --version
 ```
-
-After an authorized registry release, `npm install --global omnibranch@0.2.0` and `npx omnibranch@0.2.0 ...` become the supported registry entry points.
 
 ## Install the Agent Skill
 

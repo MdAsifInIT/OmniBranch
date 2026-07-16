@@ -4,14 +4,10 @@ OmniBranch `0.2.0` requires Node.js 22 or newer. Git is required for campaign/wo
 
 ## Choose an installation path
 
-### Verified local tarball
-
-The npm package has not been published. Install the repository’s verified artifact:
+### Install via npm
 
 ```sh
-git clone https://github.com/MdAsifInIT/OmniBranch.git
-cd OmniBranch
-npm install --global ./artifacts/omnibranch-0.2.0.tgz
+npm install --global omnibranch@0.2.0
 omnibranch --version
 ```
 
@@ -25,9 +21,7 @@ pnpm build
 pnpm omnibranch -- doctor --json
 ```
 
-### Registry commands after publication
-
-Persistent CLI:
+### Persistent CLI:
 
 ```sh
 npm install --global omnibranch@0.2.0
