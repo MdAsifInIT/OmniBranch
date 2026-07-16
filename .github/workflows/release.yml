@@ -56,3 +56,5 @@ jobs:
           registry-url: https://registry.npmjs.org
       - name: Publish verified tarball with provenance
         run: npm publish ./artifacts/omnibranch-*.tgz --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
