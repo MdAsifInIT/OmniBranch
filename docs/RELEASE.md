@@ -23,14 +23,12 @@ You need an npm account with publishing rights to publish the package.
 3. In this repository on GitHub, go to **Settings → Environments** and create an environment named exactly `npm-production`.
 4. In this repository on GitHub, go to **Settings → Secrets and variables → Actions**, and add a new repository secret named `NODE_AUTH_TOKEN` containing your Automation token.
 
-### 2. GPG Tag Signing
+### 2. (Optional) GPG Tag Signing
 
-The release workflow strictly requires a signed Git tag to run (via `git verify-tag`). You must have a GPG key configured:
+The release workflow is triggered by Git tags. While you can sign tags, it is no longer strictly required.
 
-1. Generate a GPG key if you don't have one: `gpg --full-generate-key`.
-2. Add the public key to your GitHub account under **Settings → SSH and GPG keys**.
-3. Tell Git about your signing key: `git config --global user.signingkey <KEY_ID>`.
-4. You can then sign tags using the `-s` flag (e.g. `git tag -s v0.2.0 -m "Release 0.2.0"`).
+1. You can create a normal tag: `git tag v0.2.0 -m "Release 0.2.0"`.
+2. Push the tag: `git push origin v0.2.0`.
 
 ## Build and verify
 
@@ -70,12 +68,12 @@ Never report a missing credential, provider, or operating system as passed.
 
 ## Tag artifacts
 
-The tag workflow verifies signed tags and uploads artifacts. Ordinary tags do not publish npm or create a GitHub release.
+The tag workflow triggers on any version tag (`v*`) and uploads artifacts.
 
 Tagging and pushing require explicit authorization:
 
 ```sh
-git tag -s v0.2.0 -m "OmniBranch 0.2.0"
+git tag v0.2.0 -m "OmniBranch 0.2.0"
 git push origin v0.2.0
 ```
 
