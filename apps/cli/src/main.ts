@@ -369,9 +369,7 @@ cli
       }
       if (options.stale) {
         return {
-          data: await svc.cleanupStale(
-            (options.confirm ?? false) && !(globals.dryRun ?? false),
-          ),
+          data: await svc.cleanupStale((options.confirm ?? false) && !(globals.dryRun ?? false)),
         };
       }
       // Default: report state without mutation
@@ -414,8 +412,7 @@ docs
   .description('Incrementally update project_context.md after a campaign.')
   .action(async (options: { readonly campaign: string }) => {
     await execute('docs update', async (globals) => {
-      if (globals.dryRun === true)
-        return { data: { planned: true, campaignId: options.campaign } };
+      if (globals.dryRun === true) return { data: { planned: true, campaignId: options.campaign } };
       return { data: await (await service()).updateDocs(options.campaign) };
     });
   });
@@ -457,8 +454,7 @@ mergeGuide
   .description('Generate a step-by-step merge guide for a campaign.')
   .action(async (options: { readonly campaign: string }) => {
     await execute('merge-guide generate', async (globals) => {
-      if (globals.dryRun === true)
-        return { data: { planned: true, campaignId: options.campaign } };
+      if (globals.dryRun === true) return { data: { planned: true, campaignId: options.campaign } };
       return { data: await (await service()).generateMergeGuide(options.campaign) };
     });
   });

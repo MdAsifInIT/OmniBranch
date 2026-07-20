@@ -643,9 +643,9 @@ export type ProjectDocSection =
   | 'conventions';
 
 export interface ProjectDocumentConfig {
-  readonly outputPath: string;            // default: '.omnibranch/project_context.md'
+  readonly outputPath: string; // default: '.omnibranch/project_context.md'
   readonly sections: readonly ProjectDocSection[];
-  readonly autoUpdate: boolean;           // auto-update after campaign completion
+  readonly autoUpdate: boolean; // auto-update after campaign completion
   readonly redactSecrets: boolean;
   readonly redactUserPaths: boolean;
 }
@@ -683,9 +683,9 @@ export interface TaskHistoryEntry {
 }
 
 export interface TaskHistoryConfig {
-  readonly outputPath: string;            // default: '.omnibranch/task_history.md'
-  readonly maxEntries: number;            // default: 100
-  readonly autoAppend: boolean;           // default: true
+  readonly outputPath: string; // default: '.omnibranch/task_history.md'
+  readonly maxEntries: number; // default: 100
+  readonly autoAppend: boolean; // default: true
 }
 
 export interface TaskHistorySearchResult {

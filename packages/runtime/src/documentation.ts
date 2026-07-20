@@ -32,8 +32,11 @@ export class ProjectDocumentationService {
     const runner = new ExecaProcessRunner(this.clock);
     const facts = await new RepositoryDiscovery(runner).discover(this.repositoryRoot);
     const sections = config?.sections ?? DEFAULT_SECTIONS;
-    const outputPath = path.resolve(this.repositoryRoot, config?.outputPath ?? '.omnibranch/project_context.md');
-    
+    const outputPath = path.resolve(
+      this.repositoryRoot,
+      config?.outputPath ?? '.omnibranch/project_context.md',
+    );
+
     let content = `# Project Context\n\n> Generated at: ${this.clock.now().toISOString()}\n\n`;
 
     for (const section of sections) {
@@ -65,9 +68,9 @@ export class ProjectDocumentationService {
     }
 
     if (config?.redactUserPaths) {
-        content = redact(content);
+      content = redact(content);
     }
-    
+
     await atomicWrite(outputPath, content);
     const techStackArray = await this.detectTechStack();
 
@@ -82,13 +85,19 @@ export class ProjectDocumentationService {
   }
 
   /** Incrementally update after a campaign completes */
-  async update(campaignId: string, campaignSummary: string, config?: Partial<ProjectDocumentConfig>): Promise<ProjectDocumentResult> {
-    const outputPath = path.resolve(this.repositoryRoot, config?.outputPath ?? '.omnibranch/project_context.md');
-    let existingContent = '';
+  async update(
+    campaignId: string,
+    campaignSummary: string,
+    config?: Partial<ProjectDocumentConfig>,
+  ): Promise<ProjectDocumentResult> {
+    const outputPath = path.resolve(
+      this.repositoryRoot,
+      config?.outputPath ?? '.omnibranch/project_context.md',
+    );
+    let existingContent: string;
     try {
       existingContent = await readFile(outputPath, 'utf8');
-    } catch (e) {
-      // If file doesn't exist, just generate it first
+    } catch {
       await this.generate(config);
       existingContent = await readFile(outputPath, 'utf8');
     }
@@ -135,7 +144,9 @@ export class ProjectDocumentationService {
 
   private async architectureNotes(): Promise<string> {
     const readme = await this.readHead(path.resolve(this.repositoryRoot, 'README.md'), 20);
-    const arch = await this.readHead(path.resolve(this.repositoryRoot, 'docs/01_ARCHITECTURE.md'), 20) || await this.readHead(path.resolve(this.repositoryRoot, 'ARCHITECTURE.md'), 20);
+    const arch =
+      (await this.readHead(path.resolve(this.repositoryRoot, 'docs/01_ARCHITECTURE.md'), 20)) ||
+      (await this.readHead(path.resolve(this.repositoryRoot, 'ARCHITECTURE.md'), 20));
     let out = `## Architecture Notes\n\n`;
     if (arch) {
       out += `### ARCHITECTURE.md (Excerpt)\n\n${arch}\n\n`;
@@ -144,7 +155,7 @@ export class ProjectDocumentationService {
       out += `### README.md (Excerpt)\n\n${readme}\n\n`;
     }
     if (!arch && !readme) {
-        out += `*No architecture or readme documentation found.*\n`;
+      out += `*No architecture or readme documentation found.*\n`;
     }
     return out;
   }
@@ -162,11 +173,14 @@ export class ProjectDocumentationService {
 
   private async conventions(): Promise<string> {
     let out = `## Conventions\n\n`;
-    const editorConfig = await this.readHead(path.resolve(this.repositoryRoot, '.editorconfig'), 15);
+    const editorConfig = await this.readHead(
+      path.resolve(this.repositoryRoot, '.editorconfig'),
+      15,
+    );
     if (editorConfig) {
       out += `### .editorconfig (Excerpt)\n\n\`\`\`ini\n${editorConfig}\n\`\`\`\n\n`;
     } else {
-        out += `*No conventions discovered.*\n`;
+      out += `*No conventions discovered.*\n`;
     }
     return out;
   }
@@ -178,23 +192,33 @@ export class ProjectDocumentationService {
     try {
       await stat(path.resolve(this.repositoryRoot, 'package.json'));
       stack.push('Node.js (package.json)');
-    } catch {}
+    } catch {
+      // ignore
+    }
     try {
       await stat(path.resolve(this.repositoryRoot, 'tsconfig.json'));
       stack.push('TypeScript (tsconfig.json)');
-    } catch {}
+    } catch {
+      // ignore
+    }
     try {
       await stat(path.resolve(this.repositoryRoot, 'Cargo.toml'));
       stack.push('Rust (Cargo.toml)');
-    } catch {}
+    } catch {
+      // ignore
+    }
     try {
       await stat(path.resolve(this.repositoryRoot, 'go.mod'));
       stack.push('Go (go.mod)');
-    } catch {}
+    } catch {
+      // ignore
+    }
     try {
       await stat(path.resolve(this.repositoryRoot, 'pyproject.toml'));
       stack.push('Python (pyproject.toml)');
-    } catch {}
+    } catch {
+      // ignore
+    }
     return stack;
   }
 

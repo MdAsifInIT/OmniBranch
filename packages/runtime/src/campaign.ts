@@ -349,8 +349,9 @@ export class LocalCampaignService {
 
       // Auto-append task history
       const historyService = new TaskHistoryService(this.repositoryRoot, this.clock);
-      const branches = status.workItems
-        .map((wi) => `omnibranch/work/${campaignId}/${wi.item.workItemId.replace(/^work-/, '')}`);
+      const branches = status.workItems.map(
+        (wi) => `omnibranch/work/${campaignId}/${wi.item.workItemId.replace(/^work-/, '')}`,
+      );
       const entry = historyService.buildEntry(
         campaignId as CampaignId,
         campaignId,
@@ -448,7 +449,9 @@ export class LocalCampaignService {
     const { events } = await this.openState();
     for await (const event of events.readAll()) allEvents.push(event);
     return new DiffSummaryService(this.repositoryRoot, this.runner).generate(
-      campaignId, campaignStatus.workItems, allEvents,
+      campaignId,
+      campaignStatus.workItems,
+      allEvents,
     );
   }
 
@@ -460,25 +463,26 @@ export class LocalCampaignService {
     const facts = await this.git.discover(this.repositoryRoot);
     const history = await this.showHistory();
     return new CampaignSnapshotService(this.repositoryRoot, this.clock).capture(
-      campaignId, campaignStatus.workItems, allEvents, facts, history,
+      campaignId,
+      campaignStatus.workItems,
+      allEvents,
+      facts,
+      history,
     );
   }
 
-  async cleanupCampaign(
-    campaignId: string,
-    confirm: boolean,
-  ): Promise<CleanupResult> {
+  async cleanupCampaign(campaignId: string, confirm: boolean): Promise<CleanupResult> {
     const facts = await this.git.discover(this.repositoryRoot);
     return new CampaignCleanupService(this.repositoryRoot, this.runner).cleanup(
-      campaignId, facts, confirm,
+      campaignId,
+      facts,
+      confirm,
     );
   }
 
   async cleanupStale(confirm: boolean): Promise<CleanupResult> {
     const facts = await this.git.discover(this.repositoryRoot);
-    return new CampaignCleanupService(this.repositoryRoot, this.runner).cleanStale(
-      facts, confirm,
-    );
+    return new CampaignCleanupService(this.repositoryRoot, this.runner).cleanStale(facts, confirm);
   }
 }
 

@@ -10,6 +10,7 @@ When a campaign completes and its branches are ready for integration, OmniBranch
 ## Guide Contents
 
 The generated guide contains:
+
 1. **Branch Topology Overview**: The source branches and the target integration branch.
 2. **Predicted Conflict Risk**: Analysis of potential merge conflicts based on file ownership overlaps.
 3. **Pre-Merge Checklist**: Prerequisites (e.g., passing CI, successful validation).

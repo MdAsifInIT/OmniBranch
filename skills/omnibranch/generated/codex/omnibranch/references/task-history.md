@@ -15,9 +15,9 @@ The ledger is formatted as Markdown with YAML frontmatter for each entry, allowi
 ```markdown
 ---
 campaignId: 01H7GXY9ABCDEF
-name: "Refactor Authentication Module"
-timestamp: "2026-07-20T10:00:00Z"
-outcome: "complete"
+name: 'Refactor Authentication Module'
+timestamp: '2026-07-20T10:00:00Z'
+outcome: 'complete'
 duration: 145000
 ---
 
@@ -26,14 +26,17 @@ duration: 145000
 **Objective:** Campaign Refactor Authentication Module
 
 ### Work Items
-| ID | Kind | Summary | Status | Attempts |
-|----|------|---------|--------|----------|
-| work-01 | fs.edit | Extract JWT logic | succeeded | 1 |
+
+| ID      | Kind    | Summary           | Status    | Attempts |
+| ------- | ------- | ----------------- | --------- | -------- |
+| work-01 | fs.edit | Extract JWT logic | succeeded | 1        |
 
 ### Branches Touched
+
 - `omnibranch/work/01H7GXY9ABCDEF/01`
 
 ### Files Changed
+
 - `src/auth/jwt.ts`
 ```
 

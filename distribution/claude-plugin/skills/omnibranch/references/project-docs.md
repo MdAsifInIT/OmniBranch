@@ -10,6 +10,7 @@ The Project Documentation feature maintains an up-to-date, AI-readable `project_
 ## Expected Content
 
 A fully populated `project_context.md` contains the following sections:
+
 1. **Repository Metadata**: Remote URLs, default branch, and basic statistics.
 2. **Directory Structure**: High-level mapping of folders and their responsibilities.
 3. **Tech Stack**: Detected languages and frameworks.

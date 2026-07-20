@@ -5,6 +5,7 @@ OmniBranch manages work through ephemeral Git worktrees, keeping your main repos
 ## The Campaign Sandbox
 
 When a campaign starts, OmniBranch creates a dedicated sandbox for each parallel work item.
+
 - **Path structure**: `.omnibranch/work/<campaign-id>/<work-item-id>`
 - **Branch naming**: `omnibranch/work/<campaign-id>/<work-item-id>`
 
