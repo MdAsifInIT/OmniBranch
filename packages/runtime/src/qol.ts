@@ -143,7 +143,20 @@ export class PreflightService {
 }
 
 export class DiffSummaryService {
-  constructor(_repositoryRoot: string, _runner: ProcessRunner) {}
+  constructor(
+    private readonly _repositoryRoot: string,
+    private readonly _runner: ProcessRunner,
+  ) {}
+
+  /** Execute a Git command, return null on failure */
+  private async gitOptional(args: readonly string[]): Promise<string | null> {
+    try {
+      const res = await this._runner.run({ executable: 'git', args, cwd: this._repositoryRoot });
+      return res.exitCode === 0 ? res.stdout.trim() : null;
+    } catch {
+      return null;
+    }
+  }
 
   async generate(
     campaignId: string,
@@ -157,20 +170,40 @@ export class DiffSummaryService {
 
     for (const wi of workItems) {
       const branch = `omnibranch/work/${campaignId}/${wi.item.workItemId.replace(/^work-/, '')}`;
-      // Simple mock for stats, realistically we would run `git diff --numstat`
+      let insertions = 0;
+      let deletions = 0;
+      const files: { path: string; insertions: number; deletions: number }[] = [];
+
+      const numstatRaw = await this.gitOptional(['diff', '--numstat', `main...${branch}`]);
+      if (numstatRaw) {
+        for (const line of numstatRaw.split('\n')) {
+          if (!line.trim()) continue;
+          const parts = line.split('\t');
+          if (parts.length >= 3) {
+            const insRaw = parts[0] || '';
+            const delRaw = parts[1] || '';
+            const file = parts.slice(2).join('\t');
+
+            const i = insRaw === '-' || !insRaw ? 0 : parseInt(insRaw, 10);
+            const d = delRaw === '-' || !delRaw ? 0 : parseInt(delRaw, 10);
+            insertions += i;
+            deletions += d;
+            files.push({ path: file, insertions: i, deletions: d });
+          }
+        }
+      }
+
       entries.push({
         workItemId: wi.item.workItemId,
         branch,
-        filesChanged: 1,
-        insertions: 10,
-        deletions: 5,
-        files: [
-          { path: `src/modified-for-${wi.item.workItemId}.ts`, insertions: 10, deletions: 5 },
-        ],
+        filesChanged: files.length,
+        insertions,
+        deletions,
+        files,
       });
-      totalFilesChanged += 1;
-      totalInsertions += 10;
-      totalDeletions += 5;
+      totalFilesChanged += files.length;
+      totalInsertions += insertions;
+      totalDeletions += deletions;
     }
 
     return {

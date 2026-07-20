@@ -134,24 +134,48 @@ export class MergeGuideService {
   }
 
   /** Detect merge strategy for a branch pair */
-  private async detectStrategy(_source: string, _target: string): Promise<MergeStrategy> {
-    return 'merge_commit';
+  private async detectStrategy(source: string, target: string): Promise<MergeStrategy> {
+    const res = await this.gitOptional(['merge-base', '--is-ancestor', target, source]);
+    return res !== null ? 'fast_forward' : 'merge_commit';
   }
 
   /** Predict conflict risk by analyzing ownership overlap */
   private async predictConflicts(
-    _source: string,
-    _target: string,
+    source: string,
+    target: string,
   ): Promise<{ risk: ConflictRisk; paths: readonly string[] }> {
-    return { risk: 'none', paths: [] };
+    const baseRaw = await this.gitOptional(['merge-base', target, source]);
+    if (!baseRaw) return { risk: 'none', paths: [] };
+    const base = baseRaw.trim();
+
+    const sourceChanges =
+      (await this.gitOptional(['diff', '--name-only', `${base}..${source}`]))
+        ?.split('\n')
+        .filter(Boolean) || [];
+
+    const targetChanges =
+      (await this.gitOptional(['diff', '--name-only', `${base}..${target}`]))
+        ?.split('\n')
+        .filter(Boolean) || [];
+
+    const overlap = sourceChanges.filter((f) => targetChanges.includes(f));
+    return {
+      risk: overlap.length > 0 ? 'high' : 'none',
+      paths: overlap,
+    };
   }
 
   /** Get ahead/behind counts for a branch pair */
   private async aheadBehind(
-    _source: string,
-    _target: string,
+    source: string,
+    target: string,
   ): Promise<{ ahead: number; behind: number }> {
-    return { ahead: 1, behind: 0 };
+    const ahead = await this.gitOptional(['rev-list', '--count', `${target}..${source}`]);
+    const behind = await this.gitOptional(['rev-list', '--count', `${source}..${target}`]);
+    return {
+      ahead: ahead ? parseInt(ahead.trim(), 10) : 0,
+      behind: behind ? parseInt(behind.trim(), 10) : 0,
+    };
   }
 
   /** Generate exact Git commands for the merge sequence */

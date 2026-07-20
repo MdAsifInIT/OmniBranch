@@ -205,7 +205,6 @@ export class TaskHistoryService {
   /** Extract files changed from adapter.completed events */
   private extractFilesChanged(events: readonly EventEnvelope[]): readonly string[] {
     const files = new Set<string>();
-    // Simulating file extraction - in reality we would parse 'adapter.completed' payload
     for (const e of events) {
       if (
         e.payload &&
@@ -213,7 +212,14 @@ export class TaskHistoryService {
         'type' in e.payload &&
         (e.payload as { type?: string }).type === 'adapter.completed'
       ) {
-        // In a real implementation we'd read files from the result
+        const payload = e.payload as { changeClaims?: { path?: string }[] };
+        if (payload.changeClaims && Array.isArray(payload.changeClaims)) {
+          for (const claim of payload.changeClaims) {
+            if (claim.path) {
+              files.add(claim.path);
+            }
+          }
+        }
       }
     }
     return Array.from(files);

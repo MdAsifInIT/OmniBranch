@@ -222,3 +222,7 @@ Exit criteria:
 - all mutations and approvals are represented in the event ledger;
 - release gates in the testing guide pass;
 - known limitations are documented and accepted.
+
+## OmniBranch Stale Cleanup Logic
+
+**Prompt:** Implement actual Worktree/Branch cleanup logic for \omnibranch cleanup --stale\. This should run \git worktree list --porcelain\, parse worktrees that don't match active campaign rules, and if \confirm\ is true, execute \git worktree remove\ and \git branch -D\ to clean up abandoned work.
