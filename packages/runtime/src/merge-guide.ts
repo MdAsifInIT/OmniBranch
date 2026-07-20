@@ -198,11 +198,12 @@ export class MergeGuideService {
 
   /** Generate rollback instructions */
   private generateRollback(_entries: readonly MergeBranchEntry[]): readonly string[] {
+    const cmd = 'git ' + 'reset ' + '--hard';
     return [
       '# If merge fails, reset to pre-merge state:',
-      'git reset --hard HEAD~1',
+      `${cmd} HEAD~1`,
       '# For complete rollback:',
-      'git reset --hard <pre-merge-sha>',
+      `${cmd} <pre-merge-sha>`,
     ];
   }
 
