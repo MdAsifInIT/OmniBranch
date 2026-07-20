@@ -1,5 +1,3 @@
-<!-- generated-by: gsd-doc-writer -->
-
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/brand/omnibranch-logo-dark.svg">
@@ -9,7 +7,7 @@
 </p>
 
 <p align="center">
-  Deterministic, local-first orchestration for bounded AI development across Git branches and worktrees.
+  <strong>Deterministic, local-first orchestration for bounded AI development across Git branches and worktrees.</strong>
 </p>
 
 <p align="center">
@@ -18,131 +16,70 @@
   <a href=".github/workflows/ci.yml"><img alt="Windows, macOS, and Linux CI" src="https://img.shields.io/badge/CI-Windows%20%7C%20macOS%20%7C%20Linux-0891B2"></a>
 </p>
 
-OmniBranch helps maintainers coordinate multiple AI workers without making prompts or model output the source of truth. The CLI owns scheduling, Git isolation, path ownership, policy decisions, validation evidence, recovery, and reporting. Workers receive bounded assignments and operate in disposable worktrees.
+---
+
+## The Cognitive Layer Needs an Infrastructure Layer
+
+Autonomous AI coding agents are incredibly powerful. They reason, plan, execute, and verify. But underneath all that cognition, they almost entirely share a fatal flaw: **they edit your live files directly.**
+
+If an agent gets stuck in a loop, hallucinates a refactor, or simply hits a context limit and crashes midway through, it leaves your working directory in a broken, dirty state. It forces you to manually untangle the mess. Furthermore, if you want two agents to work on two different tasks simultaneously, they will inevitably collide and overwrite each other's work.
+
+**OmniBranch is the missing execution layer.**
+
+OmniBranch does not replace your AI's brain or workflow manager; it provides the **factory floor** for them to work on safely. It enforces strict physical isolation, deterministic execution, and evidence-backed validation without touching your main working directory.
 
 ## Why OmniBranch?
 
-- **Parallel without collisions.** Each task receives an isolated worktree and explicit repository-relative ownership.
-- **Deterministic control plane.** A documented state machine, DAG scheduler, leases, policy engine, and validation graph decide what happens next.
-- **Recoverable by design.** Canonical JSONL events, rebuildable SQLite projections, transaction journals, and reconciliation make interrupted work resumable.
-- **Provider-neutral.** One Agent Skill installs to Codex, Claude Code, OpenCode, Antigravity, or the generic `.agents/skills` convention.
-- **Safe defaults.** Destructive Git operations are omitted, external writes require approval, unavailable required checks do not pass, and secrets are redacted.
-- **Local first.** Core orchestration, mock execution, tests, reports, and installer workflows work without a hosted OmniBranch service.
+- **The Brain vs. The Sandbox:** Your AI is the brain. OmniBranch is the sandbox. The AI decides _what_ to write; OmniBranch controls _where_ it is allowed to be written.
+- **Physical Isolation:** Every single task receives its own disposable Git worktree. Commits are isolated. Changes never step on each other. Reverting a disastrous AI hallucination is as simple as deleting a folder.
+- **Parallelization via DAGs:** Because every task lives in a separate worktree, you can spawn five autonomous agents simultaneously to build five independent features without fear of collisions.
+- **Absolute Resumability:** State isn't just held in ephemeral API contexts; it is written to disk via JSON envelopes and Git commits. If an agent crashes, you don't lose the work. You run `omnibranch resume` and it picks up right where it left off.
+- **Evidence-Backed Validation:** A branch isn't "done" because the AI says so. It's done when CI passes, tests are green, and explicit, scriptable evidence proves it.
+
+## Quality of Life for Autonomous Agents
+
+OmniBranch provides native utilities specifically designed to make agentic workflows smoother and more transparent:
+
+- **Task Histories:** Append-only ledgers automatically record the intent and outcome of every AI campaign, leaving a clear audit trail for future agents.
+- **Merge Guides:** Automatically generated `.omnibranch/merge-guides` with concrete step-by-step instructions to safely integrate the isolated branches back into the main line, analyzing conflict risks before you even run `git merge`.
+- **Project Context:** Scaffolding to continuously map the codebase architecture, giving AI agents exactly the context they need on initialization.
 
 ## Install
 
 ```sh
-npm install --global omnibranch@0.2.0
+npm install --global omnibranch@0.2.1
 omnibranch skill install --target auto --scope user
 ```
 
 To install the skill without keeping the CLI globally:
 
 ```sh
-npx omnibranch@0.2.0 skill install --target auto --scope user
+npx omnibranch@0.2.1 skill install --target auto --scope user
 ```
 
 See the [installation guide](docs/INSTALLATION.md) for source builds, project scope, provider paths, upgrades, and uninstall behavior.
 
 ## Five-minute skill setup
 
-### What does the skill do?
+The OmniBranch skill is installed directly into your AI coding assistant. It teaches your AI how to orchestrate complex, parallel work in your repository securely. It enforces a strict safety contract so the AI knows to always use isolated worktrees, prevent overlapping edits, and request your approval before mutating files or pushing code.
 
-The OmniBranch skill is installed directly into your AI coding assistant (e.g., Antigravity, Claude Code, Codex). It teaches your AI how to orchestrate complex, parallel work in your repository using the OmniBranch CLI safely. It enforces a strict safety contract so the AI knows to always use isolated worktrees, prevent overlapping edits, and request your approval before mutating files or pushing code. Once installed, you can simply ask your AI to _"use OmniBranch to run a campaign for X"_, and the AI will handle the orchestration securely and deterministically.
-
-1. Inspect the supported destinations without changing anything:
-
-   ```sh
-   omnibranch skill targets --scope user --json
-   ```
-
-2. Preview the exact operation:
-
-   ```sh
-   omnibranch skill plan --target auto --scope user --dry-run --json
-   ```
-
-3. Install detected providers and verify the result:
-
-   ```sh
-   omnibranch skill install --target auto --scope user --json
-   omnibranch skill doctor --scope user --json
-   ```
-
-`auto` falls back to the generic Agent Skills destination when no provider is detected. Installations are copied, hash-verified, receipt-managed, and recoverable; OmniBranch does not create skill symlinks.
+Once installed, you can simply ask your AI to _"use OmniBranch to run a campaign for X"_, and the AI will handle the orchestration securely and deterministically.
 
 ## Supported skill targets
 
-| Provider             | User scope                                                      | Project scope                 | Verification                            |
-| -------------------- | --------------------------------------------------------------- | ----------------------------- | --------------------------------------- |
-| Codex                | `$CODEX_HOME/skills/omnibranch` or `~/.codex/skills/omnibranch` | Use generic target            | Local contract                          |
-| Claude Code          | `~/.claude/skills/omnibranch`                                   | `.claude/skills/omnibranch`   | Fixture contract                        |
-| OpenCode             | `~/.config/opencode/skills/omnibranch`                          | `.opencode/skills/omnibranch` | Fixture contract                        |
-| Antigravity          | `~/.gemini/config/skills/omnibranch`                            | `.agents/skills/omnibranch`   | Fixture contract; IDE handoff is guided |
-| Generic Agent Skills | `~/.agents/skills/omnibranch`                                   | `.agents/skills/omnibranch`   | Full local lifecycle                    |
+OmniBranch supports injecting skills into nearly any major agent:
 
-Project-scoped Codex discovery is intentionally unsupported. Use `--target agents --scope project` instead.
-
-## Run a local campaign
-
-Build from source, then initialize a repository-local plan:
-
-```sh
-corepack enable
-corepack prepare pnpm@11.11.0 --activate
-pnpm install --frozen-lockfile
-pnpm build
-pnpm omnibranch -- doctor --json
-pnpm omnibranch -- init --json
-pnpm omnibranch -- config validate --json
-```
-
-Exercise the offline mock vertical slice:
-
-```sh
-pnpm omnibranch -- campaign create --name example --json
-pnpm omnibranch -- plan --campaign <campaign-id> --dry-run --json
-pnpm omnibranch -- run --campaign <campaign-id> --json
-pnpm omnibranch -- status --campaign <campaign-id> --json
-pnpm omnibranch -- review --campaign <campaign-id> --json
-pnpm omnibranch -- report --campaign <campaign-id> --json
-```
-
-Commands emit a stable envelope containing `ok`, `command`, `data`, `warnings`, `policyDecisions`, `dryRun`, and structured error details.
-
-## How it works
-
-```mermaid
-flowchart LR
-  Plan[WorkspacePlan + policy] --> Runtime[Deterministic runtime]
-  Runtime --> Worktrees[Isolated Git worktrees]
-  Runtime --> Adapters[AI / SCM / CI adapters]
-  Worktrees --> Evidence[Validation evidence]
-  Adapters --> Evidence
-  Evidence --> Events[Canonical JSONL events]
-  Events --> Projections[Rebuildable SQLite views]
-  Projections --> Reports[Markdown + JSON reports]
-  Events --> Recovery[Reconciliation + resume]
-```
-
-AI adapters follow a shared `probe → prepare → launch → supervise → collect → finalize` lifecycle. Missing versions, cancellation, or policy controls downgrade autonomy instead of being guessed.
+- Codex
+- Claude Code
+- OpenCode
+- Antigravity
+- Generic Agent Skills
 
 ## Safety model
 
-OmniBranch treats repository content, provider output, paths, environment variables, and remote responses as untrusted data.
+OmniBranch treats repository content, provider output, paths, environment variables, and remote responses as untrusted data. It does not allow arbitrary shell execution, force pushes, or destructive actions without explicit configurations.
 
-- Git commands use executable-plus-argument arrays, never interpolated shell commands.
-- Force push, hard reset, broad clean, and unsafe branch deletion are outside the supported backend.
-- Required validation gates pass only with explicit `pass` evidence.
-- Mutations support dry-run planning and policy evidence.
-- Modified or unmanaged skill destinations are refused unless the operator supplies the relevant explicit flag.
-- Credentials must not enter events, reports, prompts, snapshots, or logs.
-
-Read [Security and policy](docs/05_SECURITY_AND_POLICY.md) and [SECURITY.md](SECURITY.md) before using real credentials or remote writes.
-
-## Documentation
-
-Start at the [documentation hub](docs/README.md).
+## Documentation Hub
 
 | Goal                                | Guide                                                                       |
 | ----------------------------------- | --------------------------------------------------------------------------- |
@@ -163,8 +100,6 @@ Bug fixes, documentation, tests, adapters, security hardening, and focused desig
 pnpm verify
 pnpm verify:release
 ```
-
-Breaking changes to configuration, events, evidence, adapters, reports, CLI output, or skill layouts require an ADR and an explicit migration or rejection path.
 
 ## Security
 
