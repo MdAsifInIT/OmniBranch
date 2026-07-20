@@ -4,11 +4,21 @@ import { access, mkdtemp, readdir, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
+import fs from 'node:fs';
+
 const root = process.cwd();
+const expectedVersion = JSON.parse(
+  fs.readFileSync(path.join(root, 'package.json'), 'utf-8'),
+).version;
+const expectedTarballRegex = new RegExp(
+  `^omnibranch-${expectedVersion.replace(/\./g, '\\.')}\\.tgz$`,
+);
+
 const tarballs = (await readdir(path.join(root, 'artifacts')))
-  .filter((name) => /^omnibranch-0\.2\.0\.tgz$/.test(name))
+  .filter((name) => expectedTarballRegex.test(name))
   .sort();
-if (tarballs.length !== 1) throw new Error('Expected exactly one omnibranch 0.2.1 npm tarball.');
+if (tarballs.length !== 1)
+  throw new Error(`Expected exactly one omnibranch ${expectedVersion} npm tarball.`);
 const tarball = path.join(root, 'artifacts', tarballs[0]);
 const sandbox = await mkdtemp(path.join(os.tmpdir(), 'omnibranch-package-'));
 const prefix = path.join(sandbox, 'prefix');
@@ -38,7 +48,8 @@ try {
     npm_config_cache: path.join(os.tmpdir(), 'omnibranch-npm-cache'),
   };
   const version = (await run(binary, ['--version'], environment)).trim();
-  if (version !== '0.2.1') throw new Error(`Unexpected package version: ${version}`);
+  if (version !== expectedVersion)
+    throw new Error(`Unexpected package version: ${version}, expected: ${expectedVersion}`);
   await json(binary, ['skill', 'targets', '--scope', 'user', '--json'], environment);
   await json(
     binary,

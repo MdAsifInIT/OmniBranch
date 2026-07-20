@@ -6,7 +6,13 @@ import { readFile, readdir, stat } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 
+import fs from 'node:fs';
+
 const root = process.cwd();
+const expectedVersion = JSON.parse(
+  fs.readFileSync(path.join(root, 'package.json'), 'utf-8'),
+).version;
+const expectedVersionEscaped = expectedVersion.replace(/\./g, '\\.');
 const failures = [];
 const markdownFiles = [
   'README.md',
@@ -189,11 +195,19 @@ function checkDocumentedCommands(file, source) {
     'rollback',
     'uninstall',
   ]);
-  for (const match of source.matchAll(/(?:^|[ \t])omnibranch(?:@0\.2\.0)?[ \t]+([a-z][a-z-]*)/gm)) {
+  const topLevelRegex = new RegExp(
+    `(?:^|[ \\t])omnibranch(?:@${expectedVersionEscaped})?[ \\t]+([a-z][a-z-]*)`,
+    'gm',
+  );
+  for (const match of source.matchAll(topLevelRegex)) {
     if (!topLevel.has(match[1]))
       failures.push(`${relative(file)}: undocumented top-level CLI command: ${match[1]}`);
   }
-  for (const match of source.matchAll(/omnibranch(?:@0\.2\.0)?[ \t]+skill[ \t]+([a-z][a-z-]*)/g)) {
+  const skillRegex = new RegExp(
+    `omnibranch(?:@${expectedVersionEscaped})?[ \\t]+skill[ \\t]+([a-z][a-z-]*)`,
+    'g',
+  );
+  for (const match of source.matchAll(skillRegex)) {
     if (!skillCommands.has(match[1]))
       failures.push(`${relative(file)}: undocumented skill CLI command: ${match[1]}`);
   }

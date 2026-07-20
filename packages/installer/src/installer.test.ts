@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { mkdir, mkdtemp, readFile, readdir, symlink, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -7,6 +8,9 @@ import { describe, expect, it } from 'vitest';
 import { FakeClock, SequenceIdGenerator } from '@omnibranch/platform';
 
 import { SkillInstaller } from './index.js';
+
+const rootPackageJsonPath = path.resolve(import.meta.dirname, '../../..', 'package.json');
+const EXPECTED_VERSION = JSON.parse(readFileSync(rootPackageJsonPath, 'utf8')).version;
 
 async function fixture(
   detectedTargets: readonly ('codex' | 'claude' | 'opencode' | 'antigravity' | 'agents')[] = [],
@@ -25,7 +29,7 @@ async function fixture(
   );
   await writeFile(
     path.join(payload, 'metadata.json'),
-    JSON.stringify({ name: 'omnibranch', version: '0.2.1' }),
+    JSON.stringify({ name: 'omnibranch', version: EXPECTED_VERSION }),
   );
   await writeFile(path.join(payload, 'references', 'policy.md'), '# Policy\n');
   await writeFile(path.join(payload, 'scripts', 'validate.mjs'), 'console.log("ok");\n');
@@ -147,7 +151,7 @@ describe('SkillInstaller lifecycle', () => {
     const destination = path.join(home, '.agents', 'skills', 'omnibranch');
     expect(installed[0]).toMatchObject({
       action: 'install',
-      payloadVersion: '0.2.1',
+      payloadVersion: EXPECTED_VERSION,
       active: true,
     });
     expect(await readFile(path.join(destination, 'SKILL.md'), 'utf8')).toContain('OmniBranch');
@@ -172,7 +176,7 @@ describe('SkillInstaller lifecycle', () => {
     ]);
 
     const restored = await installer.rollback(request);
-    expect(restored[0]).toMatchObject({ action: 'rollback', payloadVersion: '0.2.1' });
+    expect(restored[0]).toMatchObject({ action: 'rollback', payloadVersion: EXPECTED_VERSION });
     expect(await readFile(path.join(destination, 'references', 'policy.md'), 'utf8')).toBe(
       '# Updated policy\n',
     );

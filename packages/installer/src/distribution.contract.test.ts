@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 
@@ -6,6 +7,9 @@ import { describe, expect, it } from 'vitest';
 
 const repositoryRoot = process.cwd();
 const canonicalRoot = path.join(repositoryRoot, 'skills', 'omnibranch');
+const EXPECTED_VERSION = JSON.parse(
+  readFileSync(path.join(repositoryRoot, 'package.json'), 'utf8'),
+).version;
 
 describe('provider distribution contracts', () => {
   it('keeps complete provider and package payloads identical to the canonical skill', async () => {
@@ -36,10 +40,10 @@ describe('provider distribution contracts', () => {
     const marketplace = JSON.parse(
       await readFile(path.join(repositoryRoot, '.claude-plugin', 'marketplace.json'), 'utf8'),
     ) as { name: string; plugins: readonly { source: string; version: string }[] };
-    expect(plugin).toMatchObject({ name: 'omnibranch', version: '0.2.1' });
+    expect(plugin).toMatchObject({ name: 'omnibranch', version: EXPECTED_VERSION });
     expect(marketplace).toMatchObject({
       name: 'omnibranch-tools',
-      plugins: [{ source: './distribution/claude-plugin', version: '0.2.1' }],
+      plugins: [{ source: './distribution/claude-plugin', version: EXPECTED_VERSION }],
     });
     for (const script of ['generate-layouts.mjs', 'validate-skill.mjs']) {
       expect(await readFile(path.join(canonicalRoot, 'scripts', script), 'utf8')).toMatch(
