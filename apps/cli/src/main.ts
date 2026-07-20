@@ -352,19 +352,36 @@ cli
 
 cli
   .command('cleanup')
-  .description('Inspect managed worktrees and report safe cleanup state.')
-  .action(async () => {
+  .description('Clean up branches and worktrees from completed campaigns.')
+  .option('--campaign <id>', 'specific campaign to clean')
+  .option('--stale', 'clean stale branches with expired leases', false)
+  .option('--confirm', 'actually perform the cleanup (default is dry-run)', false)
+  .action(async (options: { campaign?: string; stale?: boolean; confirm?: boolean }) => {
     await execute('cleanup', async (globals) => {
+      const svc = await service();
+      if (options.campaign) {
+        return {
+          data: await svc.cleanupCampaign(
+            options.campaign,
+            (options.confirm ?? false) && !(globals.dryRun ?? false),
+          ),
+        };
+      }
+      if (options.stale) {
+        return {
+          data: await svc.cleanupStale(
+            (options.confirm ?? false) && !(globals.dryRun ?? false),
+          ),
+        };
+      }
+      // Default: report state without mutation
       const facts = await discover();
-      const managed = facts.worktrees.filter((worktree) =>
-        worktree.branch?.startsWith('omnibranch/work/'),
-      );
+      const managed = facts.worktrees.filter((wt) => wt.branch?.startsWith('omnibranch/work/'));
       return {
         data: {
-          dryRun: globals.dryRun ?? false,
+          dryRun: true,
           managedWorktrees: managed,
-          removed: 0,
-          note: 'Completed fixture runs clean their contained worktrees automatically.',
+          hint: 'Use --campaign <id> --confirm or --stale --confirm to clean.',
         },
       };
     });
@@ -376,6 +393,112 @@ cli
   .action(async (options: { readonly campaign: string }) => {
     await execute('report', async () => ({
       data: await (await service()).report(options.campaign),
+    }));
+  });
+
+const docs = cli.command('docs').description('Project documentation operations.');
+docs
+  .command('generate')
+  .description('Generate .omnibranch/project_context.md from repository analysis.')
+  .action(async () => {
+    await execute('docs generate', async (globals) => {
+      if (globals.dryRun === true)
+        return { data: { planned: true, output: '.omnibranch/project_context.md' } };
+      return { data: await (await service()).generateDocs() };
+    });
+  });
+
+docs
+  .command('update')
+  .requiredOption('--campaign <id>', 'campaign id')
+  .description('Incrementally update project_context.md after a campaign.')
+  .action(async (options: { readonly campaign: string }) => {
+    await execute('docs update', async (globals) => {
+      if (globals.dryRun === true)
+        return { data: { planned: true, campaignId: options.campaign } };
+      return { data: await (await service()).updateDocs(options.campaign) };
+    });
+  });
+
+const history = cli.command('history').description('Task history operations.');
+history
+  .command('show')
+  .description('List all past campaign summaries from task_history.md.')
+  .action(async () => {
+    await execute('history show', async () => ({
+      data: await (await service()).showHistory(),
+    }));
+  });
+
+history
+  .command('append')
+  .requiredOption('--campaign <id>', 'campaign id')
+  .description('Manually record a campaign to task history.')
+  .action(async (options: { readonly campaign: string }) => {
+    await execute('history append', async () => ({
+      data: { path: await (await service()).appendHistory(options.campaign) },
+    }));
+  });
+
+history
+  .command('search')
+  .argument('<query>', 'search query')
+  .description('Search past campaigns by keyword.')
+  .action(async (query: string) => {
+    await execute('history search', async () => ({
+      data: await (await service()).searchHistory(query),
+    }));
+  });
+
+const mergeGuide = cli.command('merge-guide').description('Merge guide operations.');
+mergeGuide
+  .command('generate')
+  .requiredOption('--campaign <id>', 'campaign id')
+  .description('Generate a step-by-step merge guide for a campaign.')
+  .action(async (options: { readonly campaign: string }) => {
+    await execute('merge-guide generate', async (globals) => {
+      if (globals.dryRun === true)
+        return { data: { planned: true, campaignId: options.campaign } };
+      return { data: await (await service()).generateMergeGuide(options.campaign) };
+    });
+  });
+
+mergeGuide
+  .command('validate')
+  .requiredOption('--campaign <id>', 'campaign id')
+  .description('Check if branches are ready to merge.')
+  .action(async (options: { readonly campaign: string }) => {
+    await execute('merge-guide validate', async () => ({
+      data: await (await service()).validateMergeReadiness(options.campaign),
+    }));
+  });
+
+cli
+  .command('preflight')
+  .description('Verify repository readiness before starting a campaign.')
+  .action(async () => {
+    await execute('preflight', async () => ({
+      data: await (await service()).preflight(),
+    }));
+  });
+
+cli
+  .command('diff')
+  .requiredOption('--campaign <id>', 'campaign id')
+  .description('Generate a unified diff summary across all campaign branches.')
+  .action(async (options: { readonly campaign: string }) => {
+    await execute('diff', async () => ({
+      data: await (await service()).diffSummary(options.campaign),
+    }));
+  });
+
+cli
+  .command('snapshot')
+  .requiredOption('--campaign <id>', 'campaign id')
+  .description('Capture a context snapshot for AI handoff.')
+  .action(async (options: { readonly campaign: string }) => {
+    await execute('snapshot', async () => ({
+      data: await (await service()).snapshot(options.campaign),
     }));
   });
 

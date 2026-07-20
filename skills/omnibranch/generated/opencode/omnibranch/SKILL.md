@@ -58,6 +58,14 @@ Use this skill when a repository task benefits from deterministic work decomposi
 
 Use [policy](references/policy.md) for action classes and approval semantics. Deny rules win. Unknown actions fail closed. Dry-run coerces external mutations to a side-effect-free plan.
 
+## Quality of Life & Features
+
+- **Project Docs**: Generate and maintain a context map via `omnibranch docs generate` / `update`. See [project-docs.md](references/project-docs.md).
+- **Task History**: Maintain an audit ledger of all campaigns via `omnibranch history append` / `show`. See [task-history.md](references/task-history.md).
+- **Merge Guide**: Generate safe integration plans via `omnibranch merge-guide generate`. See [merge-guide.md](references/merge-guide.md).
+- **Branch Lifecycle**: Review how worktrees are managed and cleaned. See [branch-lifecycle.md](references/branch-lifecycle.md).
+- **Campaign Templates**: Discover reusable campaign blueprints. See [templates.md](references/templates.md).
+
 ## Scripts
 
 - `node skills/omnibranch/scripts/validate-skill.mjs` validates structure, line budget, links, and forbidden claims.

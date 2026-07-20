@@ -3,3 +3,7 @@ export * from './config.js';
 export * from './persistence.js';
 export * from './orchestration.js';
 export * from './repository.js';
+export * from './documentation.js';
+export * from './task-history.js';
+export * from './merge-guide.js';
+export * from './qol.js';

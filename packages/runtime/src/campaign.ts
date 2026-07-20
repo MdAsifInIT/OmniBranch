@@ -1,6 +1,16 @@
 import { mkdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 
+import { ProjectDocumentationService } from './documentation.js';
+import { TaskHistoryService } from './task-history.js';
+import { MergeGuideService } from './merge-guide.js';
+import {
+  PreflightService,
+  DiffSummaryService,
+  CampaignSnapshotService,
+  CampaignCleanupService,
+} from './qol.js';
+
 import type {
   AdapterResult,
   AiEngineAdapter,
@@ -12,6 +22,15 @@ import type {
   WorkItem,
   WorkItemProjection,
   WorkerId,
+  TaskHistoryEntry,
+  MergeGuide,
+  MergeReadinessResult,
+  PreflightResult,
+  CampaignDiffSummary,
+  CampaignSnapshot,
+  CleanupResult,
+  ProjectDocumentResult,
+  TaskHistorySearchResult,
 } from '@omnibranch/contracts';
 import {
   ids,
@@ -327,6 +346,20 @@ export class LocalCampaignService {
         '',
       ];
       await atomicWrite(markdown, lines.join('\n'));
+
+      // Auto-append task history
+      const historyService = new TaskHistoryService(this.repositoryRoot, this.clock);
+      const branches = status.workItems
+        .map((wi) => `omnibranch/work/${campaignId}/${wi.item.workItemId.replace(/^work-/, '')}`);
+      const entry = historyService.buildEntry(
+        campaignId as CampaignId,
+        campaignId,
+        status.workItems,
+        status.events,
+        branches,
+      );
+      await historyService.append(entry);
+
       return { json, markdown };
     } finally {
       await projections.close();
@@ -336,6 +369,116 @@ export class LocalCampaignService {
   private async gitCommand(cwd: string, args: readonly string[]): Promise<void> {
     const result = await this.runner.run({ executable: 'git', args, cwd });
     if (result.exitCode !== 0) throw new Error(`git ${args[0] ?? ''} failed: ${result.stderr}`);
+  }
+
+  // ─── Documentation ───
+
+  async generateDocs(): Promise<ProjectDocumentResult> {
+    const docService = new ProjectDocumentationService(this.repositoryRoot, this.clock);
+    return docService.generate();
+  }
+
+  async updateDocs(campaignId: string): Promise<ProjectDocumentResult> {
+    const docService = new ProjectDocumentationService(this.repositoryRoot, this.clock);
+    const campaignStatus = await this.status(campaignId);
+    const summary = campaignStatus.workItems
+      .map((wi) => `${wi.item.workItemId}: ${wi.status}`)
+      .join(', ');
+    return docService.update(campaignId, summary);
+  }
+
+  // ─── Task History ───
+
+  async showHistory(): Promise<readonly TaskHistoryEntry[]> {
+    return new TaskHistoryService(this.repositoryRoot, this.clock).show();
+  }
+
+  async appendHistory(campaignId: string): Promise<string> {
+    const historyService = new TaskHistoryService(this.repositoryRoot, this.clock);
+    const campaignStatus = await this.status(campaignId);
+    const allEvents: EventEnvelope[] = [];
+    const { events } = await this.openState();
+    for await (const event of events.readAll()) allEvents.push(event);
+    const branches = campaignStatus.workItems.map(
+      (wi) => `omnibranch/work/${campaignId}/${wi.item.workItemId.replace(/^work-/, '')}`,
+    );
+    const entry = historyService.buildEntry(
+      campaignId as CampaignId,
+      campaignId,
+      campaignStatus.workItems,
+      allEvents,
+      branches,
+    );
+    return historyService.append(entry);
+  }
+
+  async searchHistory(query: string): Promise<TaskHistorySearchResult> {
+    return new TaskHistoryService(this.repositoryRoot, this.clock).search(query);
+  }
+
+  // ─── Merge Guide ───
+
+  async generateMergeGuide(campaignId: string): Promise<MergeGuide> {
+    const mergeService = new MergeGuideService(this.repositoryRoot, this.runner, this.clock);
+    const campaignStatus = await this.status(campaignId);
+    const allEvents: EventEnvelope[] = [];
+    const { events } = await this.openState();
+    for await (const event of events.readAll()) allEvents.push(event);
+    const facts = await this.git.discover(this.repositoryRoot);
+    return mergeService.generate(campaignId, campaignStatus.workItems, allEvents, facts);
+  }
+
+  async validateMergeReadiness(campaignId: string): Promise<MergeReadinessResult> {
+    const mergeService = new MergeGuideService(this.repositoryRoot, this.runner, this.clock);
+    const campaignStatus = await this.status(campaignId);
+    const facts = await this.git.discover(this.repositoryRoot);
+    return mergeService.validateReadiness(campaignId, campaignStatus.workItems, facts);
+  }
+
+  // ─── QoL ───
+
+  async preflight(): Promise<PreflightResult> {
+    const facts = await this.git.discover(this.repositoryRoot);
+    return new PreflightService(this.repositoryRoot, this.runner, this.clock).check(facts);
+  }
+
+  async diffSummary(campaignId: string): Promise<CampaignDiffSummary> {
+    const campaignStatus = await this.status(campaignId);
+    const allEvents: EventEnvelope[] = [];
+    const { events } = await this.openState();
+    for await (const event of events.readAll()) allEvents.push(event);
+    return new DiffSummaryService(this.repositoryRoot, this.runner).generate(
+      campaignId, campaignStatus.workItems, allEvents,
+    );
+  }
+
+  async snapshot(campaignId: string): Promise<CampaignSnapshot> {
+    const campaignStatus = await this.status(campaignId);
+    const allEvents: EventEnvelope[] = [];
+    const { events } = await this.openState();
+    for await (const event of events.readAll()) allEvents.push(event);
+    const facts = await this.git.discover(this.repositoryRoot);
+    const history = await this.showHistory();
+    return new CampaignSnapshotService(this.repositoryRoot, this.clock).capture(
+      campaignId, campaignStatus.workItems, allEvents, facts, history,
+    );
+  }
+
+  async cleanupCampaign(
+    campaignId: string,
+    confirm: boolean,
+  ): Promise<CleanupResult> {
+    const facts = await this.git.discover(this.repositoryRoot);
+    return new CampaignCleanupService(this.repositoryRoot, this.runner).cleanup(
+      campaignId, facts, confirm,
+    );
+  }
+
+  async cleanupStale(confirm: boolean): Promise<CleanupResult> {
+    const facts = await this.git.discover(this.repositoryRoot);
+    return new CampaignCleanupService(this.repositoryRoot, this.runner).cleanStale(
+      facts, confirm,
+    );
   }
 }
 

@@ -630,3 +630,169 @@ export interface InstallerRequest {
   readonly replace?: boolean;
   readonly force?: boolean;
 }
+
+// ─── Feature 1: Project Documentation ───
+
+export type ProjectDocSection =
+  | 'repository_metadata'
+  | 'directory_structure'
+  | 'tech_stack'
+  | 'architecture_notes'
+  | 'branch_topology'
+  | 'campaign_history'
+  | 'conventions';
+
+export interface ProjectDocumentConfig {
+  readonly outputPath: string;            // default: '.omnibranch/project_context.md'
+  readonly sections: readonly ProjectDocSection[];
+  readonly autoUpdate: boolean;           // auto-update after campaign completion
+  readonly redactSecrets: boolean;
+  readonly redactUserPaths: boolean;
+}
+
+export interface ProjectDocumentResult {
+  readonly outputPath: string;
+  readonly sections: readonly ProjectDocSection[];
+  readonly generatedAt: string;
+  readonly repositoryName: string;
+  readonly techStack: readonly string[];
+  readonly lineCount: number;
+}
+
+// ─── Feature 2: Task History ───
+
+export interface TaskHistoryWorkItem {
+  readonly workItemId: WorkItemId;
+  readonly kind: string;
+  readonly summary: string;
+  readonly status: WorkItemStatus;
+  readonly attempts: number;
+}
+
+export interface TaskHistoryEntry {
+  readonly campaignId: CampaignId;
+  readonly name: string;
+  readonly objective: string;
+  readonly timestamp: string;
+  readonly workItems: readonly TaskHistoryWorkItem[];
+  readonly branchesTouched: readonly string[];
+  readonly filesChanged: readonly string[];
+  readonly outcome: 'complete' | 'partial' | 'failed' | 'canceled';
+  readonly durationMs: number;
+  readonly notes?: string;
+}
+
+export interface TaskHistoryConfig {
+  readonly outputPath: string;            // default: '.omnibranch/task_history.md'
+  readonly maxEntries: number;            // default: 100
+  readonly autoAppend: boolean;           // default: true
+}
+
+export interface TaskHistorySearchResult {
+  readonly query: string;
+  readonly matches: readonly TaskHistoryEntry[];
+  readonly totalEntries: number;
+}
+
+// ─── Feature 3: Merge Guide ───
+
+export type MergeStrategy = 'fast_forward' | 'squash' | 'rebase' | 'merge_commit';
+export type ConflictRisk = 'none' | 'low' | 'medium' | 'high';
+
+export interface MergeBranchEntry {
+  readonly source: string;
+  readonly target: string;
+  readonly strategy: MergeStrategy;
+  readonly order: number;
+  readonly aheadBehind: { readonly ahead: number; readonly behind: number };
+  readonly conflictRisk: ConflictRisk;
+  readonly conflictPaths: readonly string[];
+}
+
+export interface MergeGuide {
+  readonly campaignId: CampaignId;
+  readonly generatedAt: string;
+  readonly targetBranch: string;
+  readonly branches: readonly MergeBranchEntry[];
+  readonly preMergeChecks: readonly string[];
+  readonly mergeCommands: readonly string[];
+  readonly postMergeVerification: readonly string[];
+  readonly rollbackInstructions: readonly string[];
+}
+
+export interface MergeReadinessResult {
+  readonly ready: boolean;
+  readonly campaignId: string;
+  readonly branchesExist: readonly { readonly name: string; readonly exists: boolean }[];
+  readonly validationPassed: boolean;
+  readonly blockers: readonly string[];
+}
+
+// ─── Feature 4: Quality of Life ───
+
+export interface PreflightCheck {
+  readonly name: string;
+  readonly passed: boolean;
+  readonly message: string;
+  readonly severity: 'error' | 'warning' | 'info';
+}
+
+export interface PreflightResult {
+  readonly ready: boolean;
+  readonly checks: readonly PreflightCheck[];
+  readonly timestamp: string;
+}
+
+export interface DiffSummaryEntry {
+  readonly workItemId: WorkItemId;
+  readonly branch: string;
+  readonly filesChanged: number;
+  readonly insertions: number;
+  readonly deletions: number;
+  readonly files: readonly {
+    readonly path: string;
+    readonly insertions: number;
+    readonly deletions: number;
+  }[];
+}
+
+export interface CampaignDiffSummary {
+  readonly campaignId: string;
+  readonly totalFilesChanged: number;
+  readonly totalInsertions: number;
+  readonly totalDeletions: number;
+  readonly entries: readonly DiffSummaryEntry[];
+}
+
+export interface CampaignSnapshot {
+  readonly campaignId: string;
+  readonly generatedAt: string;
+  readonly status: 'active' | 'completed' | 'failed' | 'paused';
+  readonly activeLeases: readonly Lease[];
+  readonly pendingWorkItems: readonly WorkItemProjection[];
+  readonly completedWorkItems: readonly WorkItemProjection[];
+  readonly activeBranches: readonly string[];
+  readonly recentEvents: readonly EventEnvelope[];
+  readonly historyExcerpt: readonly TaskHistoryEntry[];
+}
+
+export interface CampaignTemplate {
+  readonly name: string;
+  readonly description: string;
+  readonly workItemPatterns: readonly {
+    readonly kind: string;
+    readonly summaryTemplate: string;
+    readonly ownershipGlobs: readonly string[];
+    readonly validationCommands: readonly string[];
+  }[];
+  readonly defaultLane: string;
+  readonly defaultRetry: RetryPolicy;
+}
+
+export interface CleanupResult {
+  readonly campaignId: string;
+  readonly dryRun: boolean;
+  readonly branchesRemoved: readonly string[];
+  readonly worktreesRemoved: readonly string[];
+  readonly branchesSkipped: readonly { readonly name: string; readonly reason: string }[];
+}
