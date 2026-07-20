@@ -28,10 +28,10 @@ await Promise.all(required.map((file) => access(file)));
 const manifest = JSON.parse(await readFile('package.json', 'utf8'));
 const packageManifest = JSON.parse(await readFile('apps/cli/package.json', 'utf8'));
 if (
-  manifest.version !== '0.2.0' ||
+  manifest.version !== '0.2.1' ||
   manifest.packageManager !== 'pnpm@11.11.0' ||
   packageManifest.name !== 'omnibranch' ||
-  packageManifest.version !== '0.2.0' ||
+  packageManifest.version !== '0.2.1' ||
   !packageManifest.files.includes('docs/assets/brand/') ||
   JSON.stringify(packageManifest.dependencies) !== JSON.stringify({ 'better-sqlite3': '12.11.1' })
 )

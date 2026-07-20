@@ -1,6 +1,6 @@
 {
   "name": "omnibranch",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Deterministic, policy-gated multi-worker repository orchestration.",
   "author": {
     "name": "OmniBranch contributors"

@@ -8,7 +8,7 @@ const root = process.cwd();
 const tarballs = (await readdir(path.join(root, 'artifacts')))
   .filter((name) => /^omnibranch-0\.2\.0\.tgz$/.test(name))
   .sort();
-if (tarballs.length !== 1) throw new Error('Expected exactly one omnibranch 0.2.0 npm tarball.');
+if (tarballs.length !== 1) throw new Error('Expected exactly one omnibranch 0.2.1 npm tarball.');
 const tarball = path.join(root, 'artifacts', tarballs[0]);
 const sandbox = await mkdtemp(path.join(os.tmpdir(), 'omnibranch-package-'));
 const prefix = path.join(sandbox, 'prefix');
@@ -38,7 +38,7 @@ try {
     npm_config_cache: path.join(os.tmpdir(), 'omnibranch-npm-cache'),
   };
   const version = (await run(binary, ['--version'], environment)).trim();
-  if (version !== '0.2.0') throw new Error(`Unexpected package version: ${version}`);
+  if (version !== '0.2.1') throw new Error(`Unexpected package version: ${version}`);
   await json(binary, ['skill', 'targets', '--scope', 'user', '--json'], environment);
   await json(
     binary,

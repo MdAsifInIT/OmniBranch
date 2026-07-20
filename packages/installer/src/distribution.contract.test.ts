@@ -36,10 +36,10 @@ describe('provider distribution contracts', () => {
     const marketplace = JSON.parse(
       await readFile(path.join(repositoryRoot, '.claude-plugin', 'marketplace.json'), 'utf8'),
     ) as { name: string; plugins: readonly { source: string; version: string }[] };
-    expect(plugin).toMatchObject({ name: 'omnibranch', version: '0.2.0' });
+    expect(plugin).toMatchObject({ name: 'omnibranch', version: '0.2.1' });
     expect(marketplace).toMatchObject({
       name: 'omnibranch-tools',
-      plugins: [{ source: './distribution/claude-plugin', version: '0.2.0' }],
+      plugins: [{ source: './distribution/claude-plugin', version: '0.2.1' }],
     });
     for (const script of ['generate-layouts.mjs', 'validate-skill.mjs']) {
       expect(await readFile(path.join(canonicalRoot, 'scripts', script), 'utf8')).toMatch(

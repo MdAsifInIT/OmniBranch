@@ -11,13 +11,13 @@ await mkdir(artifacts, { recursive: true });
 const archives = [
   {
     source: path.join(root, 'skills', 'omnibranch'),
-    output: path.join(artifacts, 'omnibranch-skill-0.2.0.tar.gz'),
+    output: path.join(artifacts, 'omnibranch-skill-0.2.1.tar.gz'),
     prefix: 'omnibranch',
     exclude: new Set(['generated']),
   },
   {
     source: path.join(root, 'distribution', 'claude-plugin'),
-    output: path.join(artifacts, 'omnibranch-claude-plugin-0.2.0.tar.gz'),
+    output: path.join(artifacts, 'omnibranch-claude-plugin-0.2.1.tar.gz'),
     prefix: 'omnibranch-claude-plugin',
     exclude: new Set(),
   },

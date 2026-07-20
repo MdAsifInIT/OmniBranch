@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.0 - Unreleased
+## 0.2.1 - Unreleased
 
 - Added the public Node 22 `omnibranch` package with a bundled CLI and canonical Agent Skill payload.
 - Added provider-aware install, plan, status, update, doctor, rollback, and uninstall commands for Codex, Claude Code, OpenCode, Antigravity, and generic Agent Skills.

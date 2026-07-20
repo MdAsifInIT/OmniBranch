@@ -53,7 +53,7 @@ interface SkillOptions extends Globals {
 const cli = new Command()
   .name('omnibranch')
   .description('Deterministic branch and worktree orchestration for bounded AI development work.')
-  .version('0.2.0')
+  .version('0.2.1')
   .option('--json', 'emit a stable machine-readable envelope')
   .option('--dry-run', 'plan mutations without executing them', false)
   .option('--config <path>', 'WorkspacePlan path', '.omnibranch/workspace.yaml');

@@ -7,7 +7,7 @@
     {
       "name": "omnibranch",
       "description": "Deterministic, policy-gated multi-worker repository orchestration.",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "source": "./distribution/claude-plugin"
     }
   ]

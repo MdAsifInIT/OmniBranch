@@ -27,8 +27,8 @@ You need an npm account with publishing rights to publish the package.
 
 The release workflow is triggered by Git tags. While you can sign tags, it is no longer strictly required.
 
-1. You can create a normal tag: `git tag v0.2.0 -m "Release 0.2.0"`.
-2. Push the tag: `git push origin v0.2.0`.
+1. You can create a normal tag: `git tag v0.2.1 -m "Release 0.2.1"`.
+2. Push the tag: `git push origin v0.2.1`.
 
 ## Build and verify
 
@@ -45,10 +45,10 @@ The gate runs formatting, documentation validation, lint, types, tests, bundling
 
 Review:
 
-- `artifacts/omnibranch-0.2.0.tgz`
-- `artifacts/omnibranch-skill-0.2.0.tar.gz`
-- `artifacts/omnibranch-claude-plugin-0.2.0.tar.gz`
-- `artifacts/omnibranch-0.2.0.sbom.json`
+- `artifacts/omnibranch-0.2.1.tgz`
+- `artifacts/omnibranch-skill-0.2.1.tar.gz`
+- `artifacts/omnibranch-claude-plugin-0.2.1.tar.gz`
+- `artifacts/omnibranch-0.2.1.sbom.json`
 - `artifacts/SHA256SUMS`
 
 Confirm `npm pack` contains only the allowlisted public manifest, license, README, README brand assets, bundled CLI, and canonical skill payload. The public manifest must contain only `better-sqlite3@12.11.1` as a runtime dependency.
@@ -73,8 +73,8 @@ The tag workflow triggers on any version tag (`v*`) and uploads artifacts.
 Tagging and pushing require explicit authorization:
 
 ```sh
-git tag v0.2.0 -m "OmniBranch 0.2.0"
-git push origin v0.2.0
+git tag v0.2.1 -m "OmniBranch 0.2.1"
+git push origin v0.2.1
 ```
 
 ## Publish npm with provenance
@@ -85,7 +85,7 @@ Publication requires all of the following:
 2. `publish_npm=true` input;
 3. approval of the protected `npm-production` environment;
 4. GitHub OIDC trusted publishing;
-5. the previously verified `artifacts/omnibranch-0.2.0.tgz`.
+5. the previously verified `artifacts/omnibranch-0.2.1.tgz`.
 
 The workflow runs `npm publish ... --provenance --access public`. Do not run it from an unreviewed local checkout.
 

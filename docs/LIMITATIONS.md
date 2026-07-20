@@ -1,6 +1,6 @@
 # Limitations
 
-OmniBranch `0.2.0` is intentionally conservative.
+OmniBranch `0.2.1` is intentionally conservative.
 
 ## Distribution
 

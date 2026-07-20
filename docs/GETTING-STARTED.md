@@ -19,7 +19,7 @@ The npm package is published on the registry.
 ### Install via npm
 
 ```sh
-npm install --global omnibranch@0.2.0
+npm install --global omnibranch@0.2.1
 omnibranch --version
 ```
 
