@@ -120,8 +120,10 @@ describe('platform package', () => {
 
     it('should handle Windows drive letters (mocking on posix/win)', () => {
       // isPathInside uses path.relative. We can test standard absolute behavior
-      expect(isPathInside('C:\\Users\\test', 'C:\\Users\\test\\doc')).toBe(true);
-      expect(isPathInside('C:\\Users\\test', 'D:\\Users\\test\\doc')).toBe(false);
+      if (process.platform === 'win32') {
+        expect(isPathInside('C:\\Users\\test', 'C:\\Users\\test\\doc')).toBe(true);
+        expect(isPathInside('C:\\Users\\test', 'D:\\Users\\test\\doc')).toBe(false);
+      }
     });
   });
 

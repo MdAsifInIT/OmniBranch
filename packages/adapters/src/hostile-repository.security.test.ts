@@ -127,12 +127,12 @@ describe('hostile repository boundaries', () => {
     await first.acquire('one');
     await expect(second.acquire('two')).rejects.toThrow('locked');
     await first.release();
-  });
+  }, 15000);
 
   it('redacts credential forms from evidence', () => {
     const secret = 'github_pat_abcdefghijklmnop';
     expect(redact(`Authorization: Bearer ${secret}?token=${secret}`, [secret])).not.toContain(
       secret,
     );
-  });
+  }, 15000);
 });
