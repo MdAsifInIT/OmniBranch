@@ -42,6 +42,7 @@ import {
   UuidGenerator,
   writeJsonFile,
   atomicWrite,
+  FileMutex,
 } from '@omnibranch/platform';
 
 import { LeaseManager } from './orchestration.js';
@@ -62,6 +63,7 @@ export interface CampaignStatus {
 export class LocalCampaignService {
   private readonly git: NativeGitBackend;
   private readonly leases: LeaseManager;
+  private readonly docsMutex: FileMutex;
 
   public constructor(
     private readonly repositoryRoot: string,
@@ -71,6 +73,7 @@ export class LocalCampaignService {
   ) {
     this.git = new NativeGitBackend(runner);
     this.leases = new LeaseManager(clock, idGenerator);
+    this.docsMutex = new FileMutex(path.join(this.repositoryRoot, '.omnibranch', 'docs.lock'), 10_000);
   }
 
   async create(name: string): Promise<{ readonly campaignId: CampaignId; readonly runId: RunId }> {
@@ -348,7 +351,7 @@ export class LocalCampaignService {
       await atomicWrite(markdown, lines.join('\n'));
 
       // Auto-append task history
-      const historyService = new TaskHistoryService(this.repositoryRoot, this.clock);
+      const historyService = new TaskHistoryService(this.repositoryRoot, this.docsMutex, this.clock);
       const branches = status.workItems.map(
         (wi) => `omnibranch/work/${campaignId}/${wi.item.workItemId.replace(/^work-/, '')}`,
       );
@@ -375,12 +378,12 @@ export class LocalCampaignService {
   // ─── Documentation ───
 
   async generateDocs(): Promise<ProjectDocumentResult> {
-    const docService = new ProjectDocumentationService(this.repositoryRoot, this.clock);
+    const docService = new ProjectDocumentationService(this.repositoryRoot, this.docsMutex, this.clock);
     return docService.generate();
   }
 
   async updateDocs(campaignId: string): Promise<ProjectDocumentResult> {
-    const docService = new ProjectDocumentationService(this.repositoryRoot, this.clock);
+    const docService = new ProjectDocumentationService(this.repositoryRoot, this.docsMutex, this.clock);
     const campaignStatus = await this.status(campaignId);
     const summary = campaignStatus.workItems
       .map((wi) => `${wi.item.workItemId}: ${wi.status}`)
@@ -391,11 +394,11 @@ export class LocalCampaignService {
   // ─── Task History ───
 
   async showHistory(): Promise<readonly TaskHistoryEntry[]> {
-    return new TaskHistoryService(this.repositoryRoot, this.clock).show();
+    return new TaskHistoryService(this.repositoryRoot, this.docsMutex, this.clock).show();
   }
 
   async appendHistory(campaignId: string): Promise<string> {
-    const historyService = new TaskHistoryService(this.repositoryRoot, this.clock);
+    const historyService = new TaskHistoryService(this.repositoryRoot, this.docsMutex, this.clock);
     const campaignStatus = await this.status(campaignId);
     const allEvents: EventEnvelope[] = [];
     const { events } = await this.openState();
@@ -414,13 +417,13 @@ export class LocalCampaignService {
   }
 
   async searchHistory(query: string): Promise<TaskHistorySearchResult> {
-    return new TaskHistoryService(this.repositoryRoot, this.clock).search(query);
+    return new TaskHistoryService(this.repositoryRoot, this.docsMutex, this.clock).search(query);
   }
 
   // ─── Merge Guide ───
 
   async generateMergeGuide(campaignId: string): Promise<MergeGuide> {
-    const mergeService = new MergeGuideService(this.repositoryRoot, this.runner, this.clock);
+    const mergeService = new MergeGuideService(this.repositoryRoot, this.runner, this.docsMutex, this.clock);
     const campaignStatus = await this.status(campaignId);
     const allEvents: EventEnvelope[] = [];
     const { events } = await this.openState();
@@ -430,7 +433,7 @@ export class LocalCampaignService {
   }
 
   async validateMergeReadiness(campaignId: string): Promise<MergeReadinessResult> {
-    const mergeService = new MergeGuideService(this.repositoryRoot, this.runner, this.clock);
+    const mergeService = new MergeGuideService(this.repositoryRoot, this.runner, this.docsMutex, this.clock);
     const campaignStatus = await this.status(campaignId);
     const facts = await this.git.discover(this.repositoryRoot);
     return mergeService.validateReadiness(campaignId, campaignStatus.workItems, facts);

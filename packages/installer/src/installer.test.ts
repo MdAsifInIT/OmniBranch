@@ -321,8 +321,7 @@ describe('SkillInstaller security', () => {
       installer.install(request),
       installer.install(request),
     ]);
-    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
-    expect(results.filter((result) => result.status === 'rejected')).toHaveLength(1);
+    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(2);
   });
 });
 

@@ -91,7 +91,20 @@ export interface ProcessRunner {
 }
 
 export class ExecaProcessRunner implements ProcessRunner {
-  public constructor(private readonly clock: Clock = new SystemClock()) {}
+  private readonly activeProcesses = new Set<any>();
+
+  public constructor(private readonly clock: Clock = new SystemClock()) {
+    const shutdown = () => this.cleanup();
+    process.once('SIGINT', shutdown);
+    process.once('SIGTERM', shutdown);
+  }
+
+  private cleanup() {
+    for (const p of this.activeProcesses) {
+      p.kill('SIGTERM');
+      setTimeout(() => p.kill('SIGKILL'), 5000).unref();
+    }
+  }
 
   async run(request: ProcessRequest): Promise<ProcessResult> {
     if (request.executable.trim().length === 0) {
@@ -101,7 +114,7 @@ export class ExecaProcessRunner implements ProcessRunner {
       throw new Error('Process arguments must not contain NUL bytes');
     }
     const started = this.clock.now().getTime();
-    const result = await execa(request.executable, [...request.args], {
+    const promise = execa(request.executable, [...request.args], {
       cwd: request.cwd,
       reject: request.reject ?? false,
       shell: false,
@@ -111,17 +124,25 @@ export class ExecaProcessRunner implements ProcessRunner {
       ...(request.input === undefined ? {} : { input: request.input }),
       ...(request.signal === undefined ? {} : { cancelSignal: request.signal }),
     });
-    const exitCode = result.exitCode ?? (result.failed ? 1 : 0);
-    return {
-      executable: request.executable,
-      args: request.args,
-      cwd: request.cwd,
-      exitCode,
-      stdout: String(result.stdout ?? ''),
-      stderr: String(result.stderr ?? ''),
-      durationMs: Math.max(0, this.clock.now().getTime() - started),
-      timedOut: result.timedOut,
-    };
+
+    this.activeProcesses.add(promise);
+
+    try {
+      const result = await promise;
+      const exitCode = result.exitCode ?? (result.failed ? 1 : 0);
+      return {
+        executable: request.executable,
+        args: request.args,
+        cwd: request.cwd,
+        exitCode,
+        stdout: String(result.stdout ?? ''),
+        stderr: String(result.stderr ?? ''),
+        durationMs: Math.max(0, this.clock.now().getTime() - started),
+        timedOut: result.timedOut,
+      };
+    } finally {
+      this.activeProcesses.delete(promise);
+    }
   }
 }
 
@@ -194,6 +215,7 @@ export async function atomicWrite(filePath: string, data: string | Uint8Array): 
 
 export class FileMutex {
   private handle: Awaited<ReturnType<typeof open>> | undefined;
+  private nonce: string | undefined;
 
   public constructor(
     private readonly lockPath: string,
@@ -203,26 +225,65 @@ export class FileMutex {
 
   async acquire(owner: string): Promise<void> {
     await mkdir(path.dirname(this.lockPath), { recursive: true });
-    try {
-      this.handle = await open(this.lockPath, 'wx', 0o600);
-    } catch (error) {
-      if (await this.isStale()) {
-        await unlink(this.lockPath);
+    this.nonce = randomUUID();
+    const payload = JSON.stringify({
+      owner,
+      pid: process.pid,
+      createdAt: this.clock.now().toISOString(),
+      nonce: this.nonce,
+    });
+
+    while (true) {
+      try {
         this.handle = await open(this.lockPath, 'wx', 0o600);
-      } else {
-        throw new Error(`Resource is locked: ${this.lockPath}`, { cause: error });
+        await this.handle.writeFile(payload);
+        await this.handle.sync();
+        return;
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'EEXIST') {
+          throw new Error(`Resource is locked: ${this.lockPath}`, { cause: error });
+        }
+
+        if (await this.isStale()) {
+          const tmp = `${this.lockPath}.${process.pid}.${Date.now()}.tmp`;
+          await writeFile(tmp, payload, { mode: 0o600 });
+          try {
+            await rename(tmp, this.lockPath);
+            const current = await readFile(this.lockPath, 'utf8');
+            if (current.includes(`"nonce":"${this.nonce}"`)) {
+              try {
+                this.handle = await open(this.lockPath, 'r+');
+              } catch {
+                this.handle = undefined;
+              }
+              return;
+            }
+          } catch {
+            // Ignore CAS recovery errors
+          } finally {
+            await unlink(tmp).catch(() => undefined);
+          }
+        }
+        
+        await new Promise((resolve) => setTimeout(resolve, 100 + Math.random() * 100));
       }
     }
-    await this.handle.writeFile(
-      JSON.stringify({ owner, pid: process.pid, createdAt: this.clock.now().toISOString() }),
-    );
-    await this.handle.sync();
   }
 
   async release(): Promise<void> {
     await this.handle?.close();
     this.handle = undefined;
-    await unlink(this.lockPath).catch(() => undefined);
+    if (this.nonce) {
+      try {
+        const current = await readFile(this.lockPath, 'utf8');
+        if (current.includes(`"nonce":"${this.nonce}"`)) {
+          await unlink(this.lockPath);
+        }
+      } catch {
+        // Ignore read/unlink errors
+      }
+      this.nonce = undefined;
+    }
   }
 
   private async isStale(): Promise<boolean> {

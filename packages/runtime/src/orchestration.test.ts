@@ -61,7 +61,7 @@ describe('work item lifecycle and DAG', () => {
         { workItemId: ids.workItem('a'), dependencies: [ids.workItem('b')] },
         { workItemId: ids.workItem('b'), dependencies: [ids.workItem('a')] },
       ]),
-    ).toThrow(/Cycle/);
+    ).toThrow(/cycle/i);
     expect(() =>
       validateDag([{ workItemId: ids.workItem('a'), dependencies: [ids.workItem('missing')] }]),
     ).toThrow(/missing dependency/);

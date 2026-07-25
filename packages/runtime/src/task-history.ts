@@ -10,7 +10,7 @@ import type {
   TaskHistoryWorkItem,
   WorkItemProjection,
 } from '@omnibranch/contracts';
-import { atomicWrite, type Clock, SystemClock } from '@omnibranch/platform';
+import { atomicWrite, type Clock, SystemClock, FileMutex } from '@omnibranch/platform';
 
 const DEFAULT_CONFIG: TaskHistoryConfig = {
   outputPath: '.omnibranch/task_history.md',
@@ -21,6 +21,7 @@ const DEFAULT_CONFIG: TaskHistoryConfig = {
 export class TaskHistoryService {
   constructor(
     private readonly repositoryRoot: string,
+    private readonly mutex: FileMutex,
     private readonly clock: Clock = new SystemClock(),
   ) {}
 
@@ -35,17 +36,22 @@ export class TaskHistoryService {
       config?.outputPath ?? DEFAULT_CONFIG.outputPath,
     );
 
-    const existingEntries = await this.show(config);
-    let updatedEntries = [...existingEntries, entry];
-    updatedEntries = this.enforceRotation(updatedEntries, maxEntries);
+    await this.mutex.acquire('TaskHistoryService');
+    try {
+      const existingEntries = await this.show(config);
+      let updatedEntries = [...existingEntries, entry];
+      updatedEntries = this.enforceRotation(updatedEntries, maxEntries);
 
-    let content = `# OmniBranch Task History\n\n`;
-    for (const e of updatedEntries) {
-      content += this.formatEntry(e);
+      let content = `# OmniBranch Task History\n\n`;
+      for (const e of updatedEntries) {
+        content += this.formatEntry(e);
+      }
+
+      await atomicWrite(outputPath, content);
+      return outputPath;
+    } finally {
+      this.mutex.release();
     }
-
-    await atomicWrite(outputPath, content);
-    return outputPath;
   }
 
   /**

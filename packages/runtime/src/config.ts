@@ -37,7 +37,7 @@ export async function loadWorkspacePlan(filePath: string): Promise<ConfigResult>
   }));
   if (parseDiagnostics.length > 0) return { valid: false, diagnostics: parseDiagnostics };
 
-  const parsed = document.toJS({ mapAsMap: false }) as unknown;
+  const parsed = document.toJS({ mapAsMap: false, maxAliasCount: 1000 }) as unknown;
   if (!isObject(parsed)) {
     return {
       valid: false,

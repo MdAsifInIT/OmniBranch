@@ -12,12 +12,13 @@ import type {
   RepositoryFacts,
   WorkItemProjection,
 } from '@omnibranch/contracts';
-import { atomicWrite, type Clock, type ProcessRunner, SystemClock } from '@omnibranch/platform';
+import { atomicWrite, type Clock, type ProcessRunner, SystemClock, FileMutex } from '@omnibranch/platform';
 
 export class MergeGuideService {
   constructor(
     private readonly repositoryRoot: string,
     private readonly runner: ProcessRunner,
+    private readonly mutex: FileMutex,
     private readonly clock: Clock = new SystemClock(),
   ) {}
 
@@ -62,7 +63,12 @@ export class MergeGuideService {
       this.repositoryRoot,
       `.omnibranch/merge-guides/${campaignId}.md`,
     );
-    await atomicWrite(outputPath, this.formatGuide(guide));
+    await this.mutex.acquire('MergeGuideService');
+    try {
+      await atomicWrite(outputPath, this.formatGuide(guide));
+    } finally {
+      this.mutex.release();
+    }
 
     return guide;
   }

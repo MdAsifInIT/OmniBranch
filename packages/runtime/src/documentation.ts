@@ -7,7 +7,7 @@ import type {
   ProjectDocumentResult,
   RepositoryFacts,
 } from '@omnibranch/contracts';
-import { atomicWrite, redact, type Clock, SystemClock } from '@omnibranch/platform';
+import { atomicWrite, redact, type Clock, SystemClock, FileMutex } from '@omnibranch/platform';
 import { RepositoryDiscovery } from './repository.js';
 import { ExecaProcessRunner } from '@omnibranch/platform';
 
@@ -24,6 +24,7 @@ const DEFAULT_SECTIONS: readonly ProjectDocSection[] = [
 export class ProjectDocumentationService {
   constructor(
     private readonly repositoryRoot: string,
+    private readonly mutex: FileMutex,
     private readonly clock: Clock = new SystemClock(),
   ) {}
 
@@ -71,7 +72,12 @@ export class ProjectDocumentationService {
       content = redact(content);
     }
 
-    await atomicWrite(outputPath, content);
+    await this.mutex.acquire('ProjectDocumentationService');
+    try {
+      await atomicWrite(outputPath, content);
+    } finally {
+      this.mutex.release();
+    }
     const techStackArray = await this.detectTechStack();
 
     return {
@@ -94,19 +100,26 @@ export class ProjectDocumentationService {
       this.repositoryRoot,
       config?.outputPath ?? '.omnibranch/project_context.md',
     );
-    let existingContent: string;
+    let finalLineCount = 0;
+    await this.mutex.acquire('ProjectDocumentationService');
     try {
-      existingContent = await readFile(outputPath, 'utf8');
-    } catch {
-      await this.generate(config);
-      existingContent = await readFile(outputPath, 'utf8');
+      let existingContent: string;
+      try {
+        existingContent = await readFile(outputPath, 'utf8');
+      } catch {
+        // Must generate content without calling this.generate() to avoid deadlock
+        await atomicWrite(outputPath, ''); // Create file to prevent ENOENT
+        existingContent = '';
+      }
+
+      const newSection = `\n## Recent Campaign: ${campaignId}\n\n${campaignSummary}\n`;
+      const newContent = await this.mergeIncrementally(existingContent, newSection);
+
+      await atomicWrite(outputPath, newContent);
+      finalLineCount = newContent.split('\n').length;
+    } finally {
+      this.mutex.release();
     }
-
-    // Append campaign outcome to the bottom
-    const newSection = `\n## Recent Campaign: ${campaignId}\n\n${campaignSummary}\n`;
-    const newContent = await this.mergeIncrementally(existingContent, newSection);
-
-    await atomicWrite(outputPath, newContent);
 
     return {
       outputPath: config?.outputPath ?? '.omnibranch/project_context.md',
@@ -114,7 +127,7 @@ export class ProjectDocumentationService {
       generatedAt: this.clock.now().toISOString(),
       repositoryName: path.basename(this.repositoryRoot),
       techStack: await this.detectTechStack(),
-      lineCount: newContent.split('\n').length,
+      lineCount: finalLineCount,
     };
   }
 

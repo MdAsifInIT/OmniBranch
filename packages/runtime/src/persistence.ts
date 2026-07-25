@@ -1,4 +1,4 @@
-import { mkdir, open, readFile } from 'node:fs/promises';
+import { mkdir, open, stat, copyFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import Database from 'better-sqlite3';
@@ -32,6 +32,8 @@ import { RepositoryDiscovery } from './repository.js';
 
 export class JsonlEventStore implements EventStore {
   private readonly mutex: FileMutex;
+  private readonly cachedEvents: EventEnvelope[] = [];
+  private byteOffset = 0;
 
   public constructor(private readonly filePath: string) {
     this.mutex = new FileMutex(`${filePath}.lock`, 120_000);
@@ -156,32 +158,73 @@ export class JsonlEventStore implements EventStore {
   }
 
   private async load(): Promise<readonly EventEnvelope[]> {
-    const source = await readFile(this.filePath, 'utf8').catch((error: NodeJS.ErrnoException) => {
-      if (error.code === 'ENOENT') return '';
+    const fileStat = await stat(this.filePath).catch((error: NodeJS.ErrnoException) => {
+      if (error.code === 'ENOENT') return null;
       throw error;
     });
-    return source
-      .split(/\r?\n/)
-      .filter((line) => line.trim().length > 0)
-      .map((line, index) => {
-        let parsed: unknown;
-        try {
-          parsed = JSON.parse(line);
-        } catch (error) {
-          throw new EventStoreError(
-            'CORRUPT_EVENT_LINE',
-            `Invalid JSON at line ${index + 1}.`,
-            error,
-          );
-        }
+
+    if (!fileStat) return [];
+
+    if (fileStat.size === this.byteOffset) {
+      return this.cachedEvents;
+    }
+
+    let startOffset = 0;
+    if (fileStat.size > this.byteOffset && this.byteOffset > 0) {
+      startOffset = this.byteOffset;
+    } else {
+      this.cachedEvents.length = 0; // Reset cache if file shrank or offset is 0
+    }
+
+    const buffer = Buffer.alloc(fileStat.size - startOffset);
+    const handle = await open(this.filePath, 'r');
+    try {
+      await handle.read(buffer, 0, buffer.length, startOffset);
+    } finally {
+      await handle.close();
+    }
+
+    const source = buffer.toString('utf8');
+    const lines = source.split(/\r?\n/);
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]?.trim();
+      if (!line) continue;
+
+      try {
+        const parsed = JSON.parse(line);
         if (!isEventEnvelope(parsed)) {
           throw new EventStoreError(
             'INVALID_EVENT_ENVELOPE',
-            `Invalid event envelope at line ${index + 1}.`,
+            `Invalid event envelope at line ${i + 1}.`,
           );
         }
-        return parsed;
-      });
+        this.cachedEvents.push(parsed as EventEnvelope);
+      } catch (error) {
+        if (error instanceof EventStoreError) throw error;
+        
+        const isLastNonEmpty = lines.slice(i + 1).every(l => l.trim().length === 0);
+        if (isLastNonEmpty) {
+          const backupPath = this.filePath + `.corrupt.${Date.now()}`;
+          await copyFile(this.filePath, backupPath);
+          await writeFile(this.filePath, this.cachedEvents.map(e => JSON.stringify(e)).join('\n') + '\n');
+          console.warn(`[EventStore] Recovered from truncated line. Original file backed up to ${backupPath}`);
+          break; // Stop parsing as we have recovered
+        } else {
+          throw new EventStoreError(
+            'CORRUPT_EVENT_LINE',
+            `Invalid JSON at line ${i + 1}.`,
+            error,
+          );
+        }
+      }
+    }
+    
+    // Update offset to the new file size (or the size after recovery)
+    const newStat = await stat(this.filePath);
+    this.byteOffset = newStat.size;
+
+    return this.cachedEvents;
   }
 }
 
@@ -322,9 +365,35 @@ export class SqliteProjectionStore implements ProjectionStore {
 
   async rebuild(events: AsyncIterable<EventEnvelope>): Promise<void> {
     await this.reset();
-    const batch: EventEnvelope[] = [];
-    for await (const event of events) batch.push(event);
-    await this.apply(batch);
+    let batch: EventEnvelope[] = [];
+    let count = 0;
+    for await (const event of events) {
+      batch.push(event);
+      if (batch.length >= 1000) {
+        await this.apply(batch);
+        batch = [];
+      }
+      if (++count % 10000 === 0) {
+        this.compactAppliedEvents();
+      }
+    }
+    if (batch.length > 0) {
+      await this.apply(batch);
+    }
+    this.compactAppliedEvents();
+  }
+
+  private compactAppliedEvents(): void {
+    this.requireDatabase()
+      .prepare(
+        `DELETE FROM applied_events
+         WHERE event_id NOT IN (
+           SELECT event_id FROM applied_events
+           ORDER BY rowid DESC
+           LIMIT 10000
+         )`,
+      )
+      .run();
   }
 
   private requireDatabase(): Database.Database {

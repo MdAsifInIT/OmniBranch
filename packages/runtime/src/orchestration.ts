@@ -85,6 +85,15 @@ export function validateDag(nodes: readonly DagNode[]): {
   if (byId.size !== nodes.length) {
     throw new InvariantViolation('DUPLICATE_WORK_ITEM', 'Work item ids must be unique.');
   }
+  
+  const adjacency = new Map<WorkItemId, WorkItemId[]>();
+  const inDegree = new Map<WorkItemId, number>();
+  
+  for (const id of byId.keys()) {
+    adjacency.set(id, []);
+    inDegree.set(id, 0);
+  }
+
   for (const node of nodes) {
     for (const dependency of node.dependencies) {
       if (!byId.has(dependency)) {
@@ -96,28 +105,59 @@ export function validateDag(nodes: readonly DagNode[]): {
       if (dependency === node.workItemId) {
         throw new InvariantViolation('DAG_CYCLE', 'A work item cannot depend on itself.');
       }
+      adjacency.get(dependency)!.push(node.workItemId);
+      inDegree.set(node.workItemId, inDegree.get(node.workItemId)! + 1);
     }
   }
-  const visiting = new Set<WorkItemId>();
-  const visited = new Set<WorkItemId>();
-  const order: WorkItemId[] = [];
+
+  const queue: WorkItemId[] = [];
   const depth = new Map<WorkItemId, number>();
-  const visit = (id: WorkItemId): number => {
-    if (visiting.has(id)) throw new InvariantViolation('DAG_CYCLE', `Cycle includes ${id}.`);
-    if (visited.has(id)) return depth.get(id) ?? 0;
-    visiting.add(id);
-    const node = byId.get(id)!;
-    const nodeDepth =
-      node.dependencies.length === 0
-        ? 0
-        : Math.max(...node.dependencies.map((dependency) => visit(dependency))) + 1;
-    visiting.delete(id);
-    visited.add(id);
-    depth.set(id, nodeDepth);
-    order.push(id);
-    return nodeDepth;
-  };
-  for (const id of [...byId.keys()].sort()) visit(id);
+
+  for (const [id, deg] of inDegree.entries()) {
+    if (deg === 0) {
+      queue.push(id);
+      depth.set(id, 0);
+    }
+  }
+
+  // Sort initial queue for determinism
+  queue.sort();
+
+  const order: WorkItemId[] = [];
+  
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    order.push(current);
+    const currentDepth = depth.get(current)!;
+
+    const neighbors = adjacency.get(current)!;
+    neighbors.sort(); // Maintain determinism
+
+    for (const neighbor of neighbors) {
+      const newDeg = inDegree.get(neighbor)! - 1;
+      inDegree.set(neighbor, newDeg);
+      
+      const neighborDepth = depth.get(neighbor) ?? 0;
+      if (currentDepth + 1 > neighborDepth) {
+        depth.set(neighbor, currentDepth + 1);
+      }
+      
+      if (newDeg === 0) {
+        queue.push(neighbor);
+      }
+    }
+    // Sort queue again to guarantee deterministic processing order when multiple become ready
+    queue.sort();
+  }
+
+  if (order.length < nodes.length) {
+    const inCycle = nodes.map((n) => n.workItemId).filter((id) => !order.includes(id));
+    throw new InvariantViolation(
+      'DAG_CYCLE',
+      `Dependency cycle detected involving tasks: ${inCycle.join(' -> ')}`,
+    );
+  }
+
   return { topologicalOrder: order, depth };
 }
 
@@ -466,6 +506,42 @@ export class ValidationGraph {
   }
 }
 
+const STRIPPED_ENV_VARS = new Set([
+  'ANTHROPIC_API_KEY',
+  'OPENAI_API_KEY',
+  'GITHUB_TOKEN',
+  'AWS_SECRET_ACCESS_KEY',
+  'GOOGLE_APPLICATION_CREDENTIALS',
+]);
+
+const BLOCKED_ENV_OVERRIDES = new Set([
+  'PATH',
+  'HOME',
+  'USER',
+  'SHELL',
+  'LD_PRELOAD',
+  'LD_LIBRARY_PATH',
+  'DYLD_INSERT_LIBRARIES',
+]);
+
+export function buildValidationEnv(commandEnv?: Readonly<Record<string, string>>): Record<string, string> {
+  const env: Record<string, string> = {};
+  for (const [key, value] of Object.entries(process.env)) {
+    if (value !== undefined && !STRIPPED_ENV_VARS.has(key)) {
+      env[key] = value;
+    }
+  }
+  if (commandEnv) {
+    for (const [key, value] of Object.entries(commandEnv)) {
+      if (BLOCKED_ENV_OVERRIDES.has(key.toUpperCase())) {
+        throw new Error(`Validation command attempted to override blocked environment variable: ${key}`);
+      }
+      env[key] = value;
+    }
+  }
+  return env;
+}
+
 export class CommandValidator {
   public constructor(
     private readonly runner: ProcessRunner,
@@ -480,6 +556,7 @@ export class CommandValidator {
     readonly command: string;
     readonly timeoutMs: number;
     readonly signal?: AbortSignal;
+    readonly env?: Readonly<Record<string, string>>;
   }): Promise<ValidationEvidence> {
     const started = this.clock.now();
     const shell =
@@ -494,6 +571,7 @@ export class CommandValidator {
         ...shell,
         cwd: input.repositoryRoot,
         timeoutMs: input.timeoutMs,
+        env: buildValidationEnv(input.env),
         ...(input.signal === undefined ? {} : { signal: input.signal }),
       });
       const ended = this.clock.now();
