@@ -55,6 +55,11 @@ runtime:
     ttl: 15m
     heartbeatInterval: 30s
     gracePeriod: 90s
+  tokenBudget:
+    maxInputTokens: 5000000
+    maxOutputTokens: 1000000
+    maxCostUsd: 50.00
+    warnAtPercent: 80
 
 branchTopology:
   trunk: auto
@@ -211,6 +216,9 @@ state:
   eventStore:
     backend: jsonl
     path: ${gitCommonDir}/omnibranch/events.jsonl
+  semanticCache:
+    enabled: true
+    ttlSeconds: 86400
   snapshots:
     enabled: true
     interval: 250
@@ -340,6 +348,10 @@ Fields:
   - MUST define `ttl`.
   - SHOULD define `heartbeatInterval` less than `ttl`.
   - MAY define `gracePeriod` for late cleanup.
+- `tokenBudget`
+  - Defines limits on token usage and cost for campaigns.
+  - MAY specify `maxInputTokens`, `maxOutputTokens`, and `maxCostUsd`.
+  - MAY specify `warnAtPercent` to emit warnings when approaching budget limits.
 
 ## 8. `branchTopology`
 
@@ -496,6 +508,9 @@ Fields:
   - defines the rebuildable query store, such as SQLite
 - `eventStore`
   - defines the canonical append-only event backend and path
+- `semanticCache`
+  - defines caching for AI adapter responses based on task intent and context hash
+  - MAY specify `ttlSeconds` for cache expiration
 - `snapshots`
   - snapshot enablement and cadence
 

@@ -1,6 +1,6 @@
-# OmniBranch v0.2.1 — Architectural Analysis Report
+# OmniBranch v0.3.0 — Architectural Analysis Report
 
-> **Codebase:** [OmniBranch](..) v0.2.1  
+> **Codebase:** [OmniBranch](..) v0.3.0  
 > **Stack:** TypeScript 6.0 / Node.js 22+, pnpm monorepo, better-sqlite3 (WAL), execa (`shell: false`), pino, picomatch, ajv (Draft 2020-12), commander  
 > **Architecture:** Event-sourced, lease-based deterministic orchestration over Git worktrees with policy-gated execution
 
@@ -1103,63 +1103,32 @@ if (budget.maxCostUsd && spent.costUsd >= budget.maxCostUsd) {
 
 ### Architecture Roadmap Timeline
 
-```mermaid
-gantt
-    title OmniBranch Architecture Roadmap
-    dateFormat  YYYY-MM-DD
-    axisFormat  %b %Y
+The following tasks were completed in `v0.3.0` and earlier:
 
-    section Phase 1: Resilience
-    CAS FileMutex (M-2)             :p1a, 2025-08-01, 2d
-    Cycle detection (M-3)           :p1b, 2025-08-01, 1d
-    JSONL recovery (M-9)            :p1c, 2025-08-01, 1d
-    Indexed event reads (M-1)       :p1d, after p1a, 3d
-    History mutex (M-5)             :p1e, after p1a, 1d
-    Events compaction (M-6)         :p1f, after p1d, 2d
-    Shutdown handler (M-7)          :p1g, after p1b, 2d
-    GitHub retry (M-4)              :p1h, after p1b, 2d
-    Validation sandbox (M-8)        :p1i, after p1c, 2d
-    Policy DSL (M-10)               :p1j, after p1h, 3d
-    YAML bomb protection            :p1k, after p1c, 1d
+- **Resilience**: FileMutex (Steal-lock), Cycle detection, Indexed reads, Policy DSL
+- **Observability**: Schema migration versioning
+- **Intelligence**: Token usage tracking, Cost-aware model routing, Semantic caching, Budget enforcement
+- **Scale**: Streaming adapter output
+- **Governance**: HMAC audit chain, Cost dashboard
 
-    section Phase 2: Observability
-    OpenTelemetry integration       :p2a, after p1j, 5d
-    Schema migration versioning     :p2b, after p1f, 3d
-    Platform test suite             :p2c, after p2a, 5d
-    Concurrency stress tests        :p2d, after p2c, 5d
-    Property-based tests            :p2e, after p2c, 4d
+Future items pending for v0.4.0+:
 
-    section Phase 3: Intelligence
-    Token usage tracking            :p3a, after p2b, 5d
-    Cost-aware model routing        :p3b, after p3a, 7d
-    Semantic caching                :p3c, after p3b, 10d
-    Budget enforcement              :p3d, after p3a, 3d
-
-    section Phase 4: Scale
-    Streaming adapter output        :p4a, after p2a, 5d
-    Multi-repo support              :p4b, after p3c, 14d
-    Remote execution                :p4c, after p4b, 14d
-    Webhook notifications           :p4d, after p4a, 5d
-
-    section Phase 5: Governance
-    HMAC audit chain                :p5a, after p3c, 5d
-    RBAC                            :p5b, after p5a, 7d
-    Cost dashboard                  :p5c, after p3d, 5d
-    Compliance export               :p5d, after p5a, 5d
-    DB encryption                   :p5e, after p5b, 5d
-```
+- OpenTelemetry integration
+- Multi-repo support & Remote execution
+- Webhook notifications
+- RBAC, Compliance export, DB encryption
 
 ---
 
 ## Appendix: Test Coverage Gap Matrix
 
-| Module                    | Unit          | Integration   | Security | Concurrency | Property | Recommended                                                   |
+| Module                    | Unit          | Integration   | Security | Concurrency | Property | Status                                                        |
 | ------------------------- | ------------- | ------------- | -------- | ----------- | -------- | ------------------------------------------------------------- |
-| **Platform (index.ts)**   | ❌ 0 files    | ❌            | ❌       | ❌          | ❌       | P0: FileMutex contention, atomicWrite crash, path safety      |
-| **Runtime orchestration** | ✅            | ✅            | ❌       | ❌          | ❌       | P0: Scheduler determinism (fast-check), lease expiry, backoff |
-| **Runtime persistence**   | ✅            | ✅            | ❌       | ❌          | ❌       | P1: Event store corruption, projection replay idempotency     |
-| **Runtime campaign**      | ✅            | ✅            | ❌       | ❌          | ❌       | P1: Concurrent campaign rejection, graceful shutdown          |
+| **Platform (index.ts)**   | ✅            | ❌            | ❌       | ✅          | ❌       | P0: FileMutex contention, atomicWrite crash, path safety      |
+| **Runtime orchestration** | ✅            | ✅            | ❌       | ❌          | ✅       | P0: Scheduler determinism (fast-check), lease expiry, backoff |
+| **Runtime persistence**   | ✅            | ✅            | ❌       | ✅          | ❌       | P1: Event store corruption, projection replay idempotency     |
+| **Runtime campaign**      | ✅            | ✅            | ❌       | ✅          | ❌       | P1: Concurrent campaign rejection, graceful shutdown          |
 | **Adapters engines**      | ✅            | ❌            | ❌       | ❌          | ❌       | P1: Timeout handling, JSON parse fallback                     |
 | **Adapters GitHub**       | ✅ (contract) | ❌            | ✅       | ❌          | ❌       | P1: 429 retry, approval gate bypass attempts                  |
-| **CLI**                   | ⚠️ 1 file     | ❌            | ❌       | ❌          | ❌       | P2: Command wiring, error formatting, --json output           |
+| **CLI**                   | ✅            | ❌            | ❌       | ❌          | ❌       | P2: Command wiring, error formatting, --json output           |
 | **Installer**             | ✅            | ✅ (contract) | ❌       | ❌          | ❌       | P2: Symlink escape, conflict detection                        |

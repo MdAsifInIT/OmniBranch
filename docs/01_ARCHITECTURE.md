@@ -51,7 +51,7 @@ packages/
   event-store/             -> append-only event log, indexing, and migration interfaces
   projections/             -> materialized views for runs, leases, reports, cost metrics
   scheduler/               -> DAG planning, fairness, lease orchestration
-  work-ownership/          -> path globs, lane ownership, lock evaluation, CAS filemutex
+  work-ownership/          -> path globs, lane ownership, lock evaluation, steal-lock filemutex
   git-backend/             -> repository, branch, merge-base, worktree services
   policy-engine/           -> rule evaluation, approval gates, action decisions
   validation-graph/        -> validators, dependencies, result aggregation
@@ -60,7 +60,7 @@ packages/
   adapter-scm/             -> GitHub, GitLab, Azure Repos, local-only SCM adapters
   adapter-ci/              -> CI providers and local validation runners
   adapter-secrets/         -> env/file/keychain secret resolution
-  platform/                -> filesystem, clock, process, CAS filemutex, signal abstractions
+  platform/                -> filesystem, clock, process, steal-lock filemutex, signal abstractions
   test-kit/                -> fixtures, fakes, deterministic test harnesses
 ```
 

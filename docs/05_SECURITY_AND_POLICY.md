@@ -214,6 +214,14 @@ OmniBranch policy decisions must be deterministic and made outside the engine.
 | Trust facts    | Plugin trust, secret classification, external target classification            |
 | Policy rules   | Organization defaults, repo-level restrictions, and user overrides             |
 
+### Policy Condition DSL
+
+Policy rules support enhanced matching via a domain-specific language for the `when` block:
+
+- **String matching**: Exact match, or glob pattern matching using `*` and `?` (e.g., `path: '*.config.*'`).
+- **Array inclusion**: A property matches if its value is contained in the provided array (e.g., `class: ['git_read', 'git_write']`).
+- **Strict equality**: For all other primitive types.
+
 ### Action Classes
 
 Every attempted action must be classified before evaluation.
@@ -301,6 +309,14 @@ Every material run must leave enough evidence to reconstruct what happened witho
 - command or action summaries with canonical target paths
 - result status, warnings, and artifacts collected
 - timestamps for launch, major state changes, and completion
+
+### HMAC Audit Chain
+
+To ensure the integrity of audit evidence, the event store implements an HMAC-based audit chain.
+
+- Each event appended to the store includes an `hmac` signature.
+- The HMAC is computed using `HMAC-SHA256(prev_hmac + event_json, secret_key)`.
+- This chained structure allows OmniBranch (and external auditors) to detect tampering, deletion, or reordering of events in the log.
 
 ### Evidence Quality Rules
 

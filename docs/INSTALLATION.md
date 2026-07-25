@@ -1,13 +1,13 @@
 # Installation
 
-OmniBranch `0.2.1` requires Node.js 22 or newer. Git is required for campaign/worktree commands; skill installation alone does not invoke a provider executable.
+OmniBranch `0.3.0` requires Node.js 22 or newer. Git is required for campaign/worktree commands; skill installation alone does not invoke a provider executable.
 
 ## Choose an installation path
 
 ### Install via npm
 
 ```sh
-npm install --global omnibranch@0.2.1
+npm install --global omnibranch@latest
 omnibranch --version
 ```
 
@@ -24,14 +24,14 @@ pnpm omnibranch -- doctor --json
 ### Persistent CLI:
 
 ```sh
-npm install --global omnibranch@0.2.1
+npm install --global omnibranch@latest
 omnibranch skill install --target auto --scope user
 ```
 
 One-time CLI execution:
 
 ```sh
-npx omnibranch@0.2.1 skill install --target auto --scope user
+npx omnibranch@latest skill install --target auto --scope user
 ```
 
 The npx form installs skills but does not retain the CLI globally.

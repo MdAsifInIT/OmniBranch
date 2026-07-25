@@ -48,14 +48,14 @@ OmniBranch includes native utilities to make agent orchestration transparent and
 Install the CLI globally and configure the skill for your assistant:
 
 ```sh
-npm install --global omnibranch@0.2.1
+npm install --global omnibranch@latest
 omnibranch skill install --target auto --scope user
 ```
 
 To install the skill without keeping the CLI globally:
 
 ```sh
-npx omnibranch@0.2.1 skill install --target auto --scope user
+npx omnibranch@latest skill install --target auto --scope user
 ```
 
 See the [installation guide](docs/INSTALLATION.md) for source builds, project scope, provider paths, upgrades, and uninstall behavior.

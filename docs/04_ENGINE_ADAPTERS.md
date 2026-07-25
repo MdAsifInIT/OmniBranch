@@ -26,16 +26,17 @@ An adapter is the boundary layer between OmniBranch and an execution engine. The
 
 OmniBranch requires every adapter to expose the same logical surface:
 
-| Contract area              | Required outcome                                                        |
-| -------------------------- | ----------------------------------------------------------------------- |
-| Identity                   | Stable adapter id, engine family, engine surface, and version facts     |
-| Capability discovery       | Machine-readable feature map with explicit unsupported states           |
-| Assignment materialization | Convert an OmniBranch assignment envelope into an engine-native request |
-| Process lifecycle          | Start, monitor, detect exit, collect artifacts, and classify failures   |
-| Structured results         | Return a normalized completion record regardless of engine format       |
-| Resume model               | Re-attach to an existing engine session when supported                  |
-| Cancellation               | Stop or request stop using the least destructive supported mechanism    |
-| Guided fallback            | Offer a constrained operator-mediated path when autonomy is unavailable |
+| Contract area              | Required outcome                                                                                                                                            |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Identity                   | Stable adapter id, engine family, engine surface, and version facts                                                                                         |
+| Capability discovery       | Machine-readable feature map with explicit unsupported states                                                                                               |
+| Assignment materialization | Convert an OmniBranch assignment envelope into an engine-native request                                                                                     |
+| Process lifecycle          | Start, monitor, detect exit, collect artifacts, and classify failures                                                                                       |
+| Structured results         | Return a normalized completion record regardless of engine format                                                                                           |
+| Resume model               | Re-attach to an existing engine session when supported                                                                                                      |
+| Cancellation               | Stop or request stop using the least destructive supported mechanism                                                                                        |
+| Guided fallback            | Offer a constrained operator-mediated path when autonomy is unavailable                                                                                     |
+| Cost-Aware Routing         | Provide model profiles (context window, capabilities, cost) to the scheduler so it can dynamically select the most cost-efficient capable engine for a task |
 
 ## Capability-Driven Interface
 
@@ -80,9 +81,9 @@ Before assignment launch, the adapter must:
 
 - detect whether the engine executable or application is present
 - determine the engine family and surface, such as CLI or IDE
-- collect version information when available
+- collect version information when available (if version returns non-zero but the executable exists, report a warning rather than failing)
 - collect capability facts and unknowns
-- fail closed if mandatory policy controls are missing
+- fail closed if mandatory policy controls are missing, or if the executable is completely missing (ENOENT)
 
 ### 2. Prepare
 
@@ -112,7 +113,7 @@ During execution, the adapter must:
 
 - monitor process or session liveness
 - detect idle, blocked, cancelled, failed, and completed states
-- collect incremental logs or status messages when available
+- stream real-time output (stdout/stderr) from engines via unbuffered streams (e.g., `execa` with `buffer: false`) to a ring buffer and logger for visibility
 - enforce OmniBranch timeouts, lease expiry, and policy interrupts
 
 ### 5. Collect
