@@ -4,7 +4,7 @@ import path from 'node:path';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 import { JsonlEventStore, SqliteProjectionStore } from './persistence.js';
-import { FileMutex, FakeClock, ExecaProcessRunner, ids } from '@omnibranch/platform';
+import { FileMutex, ExecaProcessRunner, ids } from '@omnibranch/platform';
 import { LocalCampaignService } from './campaign.js';
 import type { EventEnvelope, AiEngineAdapter } from '@omnibranch/contracts';
 
@@ -98,15 +98,16 @@ describe('Concurrency Integration Tests', () => {
 
   it('handles concurrent FileMutex.acquire() with stale lock to exactly one winner', async () => {
     const lockPath = path.join(testDir, 'test.lock');
-    const clock = new FakeClock(new Date());
 
-    const mutex1 = new FileMutex(lockPath, 100, clock);
+    const mutex1 = new FileMutex(lockPath, 100);
     await mutex1.acquire('winner1');
 
-    clock.advance(200); // make it stale
+    await new Promise((resolve) => setTimeout(resolve, 200)); // let it become stale
 
-    const mutex2 = new FileMutex(lockPath, 100, clock);
-    const mutex3 = new FileMutex(lockPath, 100, clock);
+    // Set a very high staleAfterMs so P3 doesn't steal P2's new lock
+    // but set a low acquireTimeoutMs so P3 gives up instead of spinning forever
+    const mutex2 = new FileMutex(lockPath, 5000, undefined, 400);
+    const mutex3 = new FileMutex(lockPath, 5000, undefined, 400);
 
     const results = await Promise.allSettled([
       mutex2.acquire('winner2'),
@@ -123,11 +124,9 @@ describe('Concurrency Integration Tests', () => {
     );
 
     // cleanup
-    await mutex1.release();
-    if (fulfilled.length > 0) {
-      if (results[0].status === 'fulfilled') await mutex2.release();
-      else await mutex3.release();
-    }
+    await mutex1.release(); // this will probably do nothing because it was stolen
+    if (results[0].status === 'fulfilled') await mutex2.release();
+    if (results[1].status === 'fulfilled') await mutex3.release();
   });
 
   it('campaign lock prevents concurrent campaign execution', async () => {

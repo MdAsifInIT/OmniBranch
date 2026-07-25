@@ -1,15 +1,5 @@
 import { randomUUID, createHash } from 'node:crypto';
-import {
-  mkdir,
-  open,
-  readFile,
-  realpath,
-  rename,
-  stat,
-  unlink,
-  writeFile,
-  rm,
-} from 'node:fs/promises';
+import { mkdir, open, readFile, realpath, rename, stat, writeFile, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { execa } from 'execa';
@@ -331,6 +321,7 @@ export class FileMutex {
     private readonly lockPath: string,
     private readonly staleAfterMs = 60_000,
     private readonly clock: Clock = new SystemClock(),
+    private readonly acquireTimeoutMs = staleAfterMs * 2,
   ) {}
 
   async acquire(owner: string): Promise<void> {
@@ -356,27 +347,33 @@ export class FileMutex {
         }
 
         if (await this.isStale()) {
-          const tmp = `${this.lockPath}.${process.pid}.${Date.now()}.tmp`;
-          await writeFile(tmp, payload, { mode: 0o600 });
+          const stealLock = `${this.lockPath}.steal`;
           try {
-            await rename(tmp, this.lockPath);
-            const current = await readFile(this.lockPath, 'utf8');
-            if (current.includes(`"nonce":"${this.nonce}"`)) {
-              try {
-                this.handle = await open(this.lockPath, 'r+');
-              } catch {
-                this.handle = undefined;
-              }
-              return;
+            // Attempt to acquire the exclusive right to reclaim this stale lock
+            const stealHandle = await open(stealLock, 'wx', 0o600);
+            await stealHandle.close();
+
+            // We hold the steal lock. Double check the main lock is STILL stale.
+            if (await this.isStale()) {
+              await rm(this.lockPath, { force: true });
             }
+            await rm(stealLock, { force: true });
           } catch {
-            // Ignore CAS recovery errors
-          } finally {
-            await unlink(tmp).catch(() => undefined);
+            // Either someone else is stealing it, or the steal lock itself is stale.
+            // If the steal lock is stuck, we can clear it if it's too old.
+            try {
+              const stealStat = await stat(stealLock);
+              if (Date.now() - stealStat.mtimeMs > 5000) {
+                await rm(stealLock, { force: true });
+              }
+            } catch {
+              // Ignore
+            }
           }
+          continue; // Go back to the top and try to acquire normally
         }
 
-        if (Date.now() - started > this.staleAfterMs * 2) {
+        if (Date.now() - started > this.acquireTimeoutMs) {
           throw new Error(`Resource is locked and not stale: ${this.lockPath}`, { cause: error });
         }
         await new Promise((resolve) => setTimeout(resolve, 100 + Math.random() * 100));
