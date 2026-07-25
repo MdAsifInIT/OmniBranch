@@ -122,10 +122,10 @@ describe('hostile repository boundaries', () => {
       }),
     ).toThrow();
     const root = await mkdtemp(path.join(os.tmpdir(), 'omnibranch-lock-'));
-    const first = new FileMutex(path.join(root, 'mutation.lock'));
-    const second = new FileMutex(path.join(root, 'mutation.lock'));
+    const first = new FileMutex(path.join(root, 'mutation.lock'), 500);
+    const second = new FileMutex(path.join(root, 'mutation.lock'), 500);
     await first.acquire('one');
-    await expect(second.acquire('two')).rejects.toThrow('locked');
+    await expect(second.acquire('two')).rejects.toThrow(/locked/i);
     await first.release();
   }, 15000);
 
