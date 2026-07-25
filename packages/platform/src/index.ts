@@ -330,6 +330,7 @@ export class FileMutex {
       createdAt: this.clock.now().toISOString(),
       nonce: this.nonce,
     });
+    const started = Date.now();
 
     while (true) {
       try {
@@ -363,7 +364,10 @@ export class FileMutex {
           }
         }
         
-        throw new Error(`Resource is locked and not stale: ${this.lockPath}`);
+        if (Date.now() - started > this.timeoutMs) {
+          throw new Error(`Resource is locked and not stale: ${this.lockPath}`);
+        }
+        await new Promise((resolve) => setTimeout(resolve, 100 + Math.random() * 100));
       }
     }
   }
