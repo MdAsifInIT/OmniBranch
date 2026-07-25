@@ -70,7 +70,7 @@ export class TokenBudgetExceededError extends Error {
       totalOutputTokens: number;
       estimatedCostUsd: number;
     },
-    readonly budget: any,
+    readonly budget: unknown,
   ) {
     super(message);
     this.name = 'TokenBudgetExceededError';
@@ -155,7 +155,19 @@ export class LocalCampaignService {
   async runFixture(
     campaignId: string,
     adapter: AiEngineAdapter,
-    options?: { readonly runtimeConfig?: any },
+    options?: {
+      readonly runtimeConfig?: {
+        readonly tokenBudget?: {
+          readonly maxInputTokens?: number;
+          readonly maxOutputTokens?: number;
+          readonly maxCostUsd?: number;
+        };
+        readonly semanticCache?: {
+          readonly enabled?: boolean;
+          readonly ttlSeconds?: number;
+        };
+      };
+    },
   ): Promise<readonly AdapterResult[]> {
     const runId = runIdFor(campaignId);
     const { events, projections } = await this.openState();
@@ -175,7 +187,7 @@ export class LocalCampaignService {
       let estimatedCostUsd = 0;
       for await (const ev of events.readAll()) {
         if (ev.type === 'adapter.completed' && ev.payload) {
-          const payload = ev.payload as any;
+          const payload = ev.payload as { tokenUsage?: { inputTokens?: number; outputTokens?: number; estimatedCostUsd?: number; costUsd?: number } };
           if (payload.tokenUsage) {
             totalInputTokens += payload.tokenUsage.inputTokens ?? 0;
             totalOutputTokens += payload.tokenUsage.outputTokens ?? 0;

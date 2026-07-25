@@ -7,7 +7,7 @@ import type {
   ProjectDocumentResult,
   RepositoryFacts,
 } from '@omnibranch/contracts';
-import { atomicWrite, redact, type Clock, SystemClock, FileMutex } from '@omnibranch/platform';
+import { atomicWrite, redact, type Clock, SystemClock, type FileMutex } from '@omnibranch/platform';
 import { RepositoryDiscovery } from './repository.js';
 import { ExecaProcessRunner } from '@omnibranch/platform';
 
@@ -100,7 +100,7 @@ export class ProjectDocumentationService {
       this.repositoryRoot,
       config?.outputPath ?? '.omnibranch/project_context.md',
     );
-    let finalLineCount = 0;
+    let finalLineCount: number;
     await this.mutex.acquire('ProjectDocumentationService');
     try {
       let existingContent: string;

@@ -255,7 +255,7 @@ function resolveModelForCandidate(
   candidate: WorkItemProjection,
   modelsInput: Readonly<Record<string, readonly ModelProfile[]>> | readonly ModelProfile[],
 ): ModelProfile | undefined {
-  let modelPool: readonly ModelProfile[] = [];
+  let modelPool: readonly ModelProfile[];
   if (Array.isArray(modelsInput)) {
     const laneFiltered = modelsInput.filter((m) => {
       if (m.lane && m.lane !== candidate.item.lane) return false;

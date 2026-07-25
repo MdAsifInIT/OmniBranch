@@ -120,9 +120,9 @@ export class GitHubScmAdapter implements ScmAdapter {
         const error = normalizeGitHubError(err);
         if (attempt < maxAttempts) {
           if (error.code === 'rate_limited') {
-            const retryAfter = (error as any).retryAfter;
+            const retryAfter = (error as { retryAfter?: string | number }).retryAfter;
             const delay = retryAfter
-              ? parseInt(retryAfter, 10) * 1000
+              ? parseInt(String(retryAfter), 10) * 1000
               : 1000 * Math.pow(2, attempt);
             await new Promise((resolve) => setTimeout(resolve, delay));
             continue;
@@ -465,7 +465,7 @@ function normalizeGitHubError(error: unknown): GitHubAdapterError {
     status,
   );
   if (candidate.response?.headers && candidate.response.headers['retry-after']) {
-    (adapterError as any).retryAfter = candidate.response.headers['retry-after'];
+    Object.assign(adapterError, { retryAfter: candidate.response.headers['retry-after'] });
   }
   return adapterError;
 }

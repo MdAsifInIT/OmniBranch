@@ -151,6 +151,7 @@ describe('Concurrency Integration Tests', () => {
     const { campaignId } = await svc1.create('test-campaign');
 
     const mockAdapter = {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       prepare: async (assignment: any) => {
         const root = assignment.scope.repositoryRoot;
         await mkdir(root, { recursive: true });
@@ -170,6 +171,7 @@ describe('Concurrency Integration Tests', () => {
           guided: false,
         };
       },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       launch: async (prepared: any) => {
         return {
           workItemId: prepared.assignment.workItemId,
@@ -180,6 +182,7 @@ describe('Concurrency Integration Tests', () => {
           resumeLevel: 'none',
         };
       },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       collect: async (handle: any) => {
         return {
           runId: handle.runId,

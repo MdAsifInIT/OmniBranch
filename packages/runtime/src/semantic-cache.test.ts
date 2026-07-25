@@ -12,12 +12,15 @@ describe('SemanticCacheManager & Migration v3', () => {
     const manager = new SemanticCacheManager(store, runner);
 
     const workItem: WorkItem = {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       workItemId: 'work-1' as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       runId: 'run-1' as any,
       kind: 'task',
       priority: 1,
       summary: 'Summary test',
       dependencies: [],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ownership: 'isolated' as any,
       requestedCapabilities: [],
       retry: { maxAttempts: 1, backoffMs: 0, multiplier: 1 },

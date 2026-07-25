@@ -10,7 +10,7 @@ import type {
   TaskHistoryWorkItem,
   WorkItemProjection,
 } from '@omnibranch/contracts';
-import { atomicWrite, type Clock, SystemClock, FileMutex } from '@omnibranch/platform';
+import { atomicWrite, type Clock, SystemClock, type FileMutex } from '@omnibranch/platform';
 
 const DEFAULT_CONFIG: TaskHistoryConfig = {
   outputPath: '.omnibranch/task_history.md',

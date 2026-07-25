@@ -159,6 +159,7 @@ export interface ProcessRunner {
 }
 
 export class ExecaProcessRunner implements ProcessRunner {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private readonly activeProcesses = new Set<any>();
 
   public constructor(private readonly clock: Clock = new SystemClock()) {
@@ -219,16 +220,16 @@ export class ExecaProcessRunner implements ProcessRunner {
       });
     }
 
-    let result: any;
+    let result: Record<string, unknown>;
     try {
-      result = await subprocess;
-    } catch (error: any) {
-      result = error;
+      result = (await subprocess) as unknown as Record<string, unknown>;
+    } catch (error: unknown) {
+      result = error as Record<string, unknown>;
     } finally {
       this.activeProcesses.delete(subprocess);
     }
 
-    const exitCode = result.exitCode ?? (result.failed ? 1 : 0);
+    const exitCode = (typeof result.exitCode === 'number' ? result.exitCode : undefined) ?? (result.failed ? 1 : 0);
     const stdoutStr = stdoutBuffer.toString();
     const stderrStr = stderrBuffer.toString();
     const stdout =
@@ -374,7 +375,7 @@ export class FileMutex {
         }
 
         if (Date.now() - started > this.staleAfterMs * 2) {
-          throw new Error(`Resource is locked and not stale: ${this.lockPath}`);
+          throw new Error(`Resource is locked and not stale: ${this.lockPath}`, { cause: error });
         }
         await new Promise((resolve) => setTimeout(resolve, 100 + Math.random() * 100));
       }

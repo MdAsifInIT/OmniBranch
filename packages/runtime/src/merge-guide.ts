@@ -17,7 +17,7 @@ import {
   type Clock,
   type ProcessRunner,
   SystemClock,
-  FileMutex,
+  type FileMutex,
 } from '@omnibranch/platform';
 
 export class MergeGuideService {

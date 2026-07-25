@@ -18,6 +18,7 @@ describe('HMAC Audit Chain', () => {
       expectedStreamVersion: 0,
       events: [
         {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           eventId: 'evt-1' as any,
           schemaVersion: 1,
           correlationId: 'corr-1',

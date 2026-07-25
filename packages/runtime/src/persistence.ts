@@ -137,6 +137,7 @@ export class JsonlEventStore implements EventStore {
         errors.push('Event at index ' + index + ' (id: ' + event.eventId + ') is missing HMAC.');
         continue;
       }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { hmac, ...rest } = event;
       const expectedHmac = crypto
         .createHmac('sha256', secret)
@@ -478,7 +479,18 @@ export class SqliteProjectionStore implements ProjectionStore {
   async getSemanticCacheEntry(cacheKey: string): Promise<SemanticCacheEntry | null> {
     const row = this.requireDatabase()
       .prepare('SELECT * FROM semantic_cache WHERE cache_key = ?')
-      .get(cacheKey) as any;
+      .get(cacheKey) as {
+      cache_key: string;
+      work_item_id: string;
+      adapter_id: string;
+      status: import('@omnibranch/contracts').AdapterStatus;
+      summary: string;
+      artifacts_json: string;
+      change_claims_json: string;
+      diff_patch: string;
+      created_at: string;
+      ttl_seconds: number;
+    } | undefined;
     if (!row) return null;
     return {
       cacheKey: row.cache_key,
