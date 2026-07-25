@@ -183,6 +183,7 @@ for (const name of [
   'reconcile',
   'cleanup',
   'report',
+  'cost',
 ]) {
   const [commandName, subcommand] = name.split(' ');
   if (subcommand === undefined) {

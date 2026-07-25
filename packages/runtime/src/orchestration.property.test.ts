@@ -44,7 +44,7 @@ const workItemProjectionArb = fc.record({
     'succeeded', 'failed', 'canceled'
   ),
   attempt: fc.integer({ min: 0, max: 10 }),
-  nextEligibleAt: fc.option(fc.date().map(d => d.toISOString())),
+  nextEligibleAt: fc.option(fc.date({ noInvalidDate: true }).map(d => d.toISOString())),
 }) as fc.Arbitrary<WorkItemProjection>;
 
 const schedulerInputArb = fc.record({
@@ -75,7 +75,7 @@ describe('Property-Based Tests for Orchestration', () => {
         const idToIndex = new Map<WorkItemId, number>();
         const validNodes: DagNode[] = [];
         for (let i = 0; i < nodes.length; i++) {
-          idToIndex.set(nodes[i].workItemId, i);
+          idToIndex.set(nodes[i]!.workItemId, i);
         }
         
         for (const node of nodes) {

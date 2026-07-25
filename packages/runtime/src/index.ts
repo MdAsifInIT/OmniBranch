@@ -7,3 +7,5 @@ export * from './documentation.js';
 export * from './task-history.js';
 export * from './merge-guide.js';
 export * from './qol.js';
+export * from './semantic-cache.js';
+export * from './model-router.js';

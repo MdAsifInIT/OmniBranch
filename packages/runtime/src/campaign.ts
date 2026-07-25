@@ -31,6 +31,7 @@ import type {
   CleanupResult,
   ProjectDocumentResult,
   TaskHistorySearchResult,
+  TokenUsage,
 } from '@omnibranch/contracts';
 import {
   ids,
@@ -45,6 +46,7 @@ import {
   FileMutex,
 } from '@omnibranch/platform';
 
+import { SemanticCacheManager } from "./semantic-cache.js";
 import { LeaseManager } from './orchestration.js';
 import {
   JsonlEventStore,
@@ -58,6 +60,17 @@ export interface CampaignStatus {
   readonly checkpoint: number;
   readonly workItems: readonly WorkItemProjection[];
   readonly events: number;
+}
+
+export class TokenBudgetExceededError extends Error {
+  public constructor(
+    message: string,
+    readonly usage: { totalInputTokens: number; totalOutputTokens: number; estimatedCostUsd: number },
+    readonly budget: any,
+  ) {
+    super(message);
+    this.name = "TokenBudgetExceededError";
+  }
 }
 
 export class LocalCampaignService {
@@ -135,6 +148,7 @@ export class LocalCampaignService {
   async runFixture(
     campaignId: string,
     adapter: AiEngineAdapter,
+    options?: { readonly runtimeConfig?: any },
   ): Promise<readonly AdapterResult[]> {
     const runId = runIdFor(campaignId);
     const { events, projections } = await this.openState();
@@ -144,14 +158,45 @@ export class LocalCampaignService {
       if (workItems.length === 0) {
         await projections.close();
         await this.planFixture(campaignId);
-        return this.runFixture(campaignId, adapter);
+        return this.runFixture(campaignId, adapter, options);
       }
-      const pending = workItems.filter((projection) => projection.status !== 'succeeded');
+      const pending = workItems.filter((projection) => projection.status !== "succeeded");
       if (pending.length === 0) return [];
+
+      let totalInputTokens = 0;
+      let totalOutputTokens = 0;
+      let estimatedCostUsd = 0;
+      for await (const ev of events.readAll()) {
+        if (ev.type === "adapter.completed" && ev.payload) {
+          const payload = ev.payload as any;
+          if (payload.tokenUsage) {
+            totalInputTokens += payload.tokenUsage.inputTokens ?? 0;
+            totalOutputTokens += payload.tokenUsage.outputTokens ?? 0;
+            estimatedCostUsd += payload.tokenUsage.estimatedCostUsd ?? payload.tokenUsage.costUsd ?? 0;
+          }
+        }
+      }
+      const budget = options?.runtimeConfig?.tokenBudget;
+      if (budget) {
+        const usage = { totalInputTokens, totalOutputTokens, estimatedCostUsd };
+        if (budget.maxInputTokens !== undefined && totalInputTokens > budget.maxInputTokens) {
+          throw new TokenBudgetExceededError("Input token budget exceeded (" + totalInputTokens + " > " + budget.maxInputTokens + ")", usage, budget);
+        }
+        if (budget.maxOutputTokens !== undefined && totalOutputTokens > budget.maxOutputTokens) {
+          throw new TokenBudgetExceededError("Output token budget exceeded (" + totalOutputTokens + " > " + budget.maxOutputTokens + ")", usage, budget);
+        }
+        if (budget.maxCostUsd !== undefined && estimatedCostUsd > budget.maxCostUsd) {
+          throw new TokenBudgetExceededError("Cost budget exceeded ($" + estimatedCostUsd + " > $" + budget.maxCostUsd + ")", usage, budget);
+        }
+      }
+
       const facts = await this.git.discover(this.repositoryRoot);
-      if (facts.head === null) throw new Error('Campaign repository has no HEAD.');
-      const worktreeRoot = path.join(path.dirname(facts.root), '.omnibranch-worktrees', campaignId);
+      if (facts.head === null) throw new Error("Campaign repository has no HEAD.");
+      const worktreeRoot = path.join(path.dirname(facts.root), ".omnibranch-worktrees", campaignId);
       await mkdir(worktreeRoot, { recursive: true });
+
+      const cacheManager = new SemanticCacheManager(projections, this.runner);
+      const isCacheEnabled = options?.runtimeConfig?.semanticCache?.enabled ?? false;
 
       const launchPromises: Promise<{
         readonly projection: WorkItemProjection;
@@ -159,16 +204,19 @@ export class LocalCampaignService {
         readonly branch: string;
         readonly leaseId: LeaseId;
         readonly workerId: WorkerId;
-        readonly handle: Awaited<ReturnType<AiEngineAdapter['launch']>>;
+        readonly handle?: Awaited<ReturnType<AiEngineAdapter["launch"]>>;
+        readonly cachedResult?: AdapterResult;
+        readonly cacheKey: string;
       }>[] = [];
+
       for (const projection of pending) {
-        const suffix = projection.item.workItemId.replace(/^work-/, '');
-        const branch = `omnibranch/work/${campaignId}/${suffix}`;
+        const suffix = projection.item.workItemId.replace(/^work-/, "");
+        const branch = "omnibranch/work/" + campaignId + "/" + suffix;
         const worktreePath = path.join(worktreeRoot, suffix);
         await this.git.createBranch({
           repositoryRoot: facts.root,
           branch,
-          startPoint: 'HEAD',
+          startPoint: "HEAD",
           expectedStartOid: facts.head,
           dryRun: false,
         });
@@ -179,7 +227,7 @@ export class LocalCampaignService {
           expectedBranchOid: facts.head,
           dryRun: false,
         });
-        const workerId = `mock-${suffix}` as WorkerId;
+        const workerId = "mock-" + suffix as WorkerId;
         const lease = this.leases.acquire({
           workItemId: projection.item.workItemId,
           workerId,
@@ -188,28 +236,75 @@ export class LocalCampaignService {
           ttlMs: 60_000,
           heartbeatMs: 30_000,
         });
-        const outputPath = String(projection.item.expectedOutput['path']);
-        const contents = String(projection.item.expectedOutput['contents']);
+        const outputPath = String(projection.item.expectedOutput["path"]);
+        const contents = String(projection.item.expectedOutput["contents"]);
+
         const assignment: AssignmentEnvelope = {
-          assignmentId: `assignment-${projection.item.workItemId}`,
+          assignmentId: "assignment-" + projection.item.workItemId,
           runId,
           workItemId: projection.item.workItemId,
           objective: projection.item.summary,
           scope: {
             allowedPaths: [outputPath],
-            forbiddenPaths: ['.git/**', '.omnibranch/**'],
+            forbiddenPaths: [".git/**", ".omnibranch/**"],
             repositoryRoot: worktreePath,
             writeAllowed: true,
           },
-          constraints: ['Do not mutate Git metadata or files outside the assigned output.'],
-          context: { mode: 'complete', outputPath, contents },
-          validation: [`Output ${outputPath} must exactly match the assigned content.`],
-          escalation: ['Return blocked instead of widening scope.'],
+          constraints: ["Do not mutate Git metadata or files outside the assigned output."],
+          context: { mode: "complete", outputPath, contents },
+          validation: ["Output " + outputPath + " must exactly match the assigned content."],
+          escalation: ["Return blocked instead of widening scope."],
           lease,
         };
+
         launchPromises.push(
           (async () => {
             const preparedAssignment = await adapter.prepare(assignment);
+            const adapterId = preparedAssignment.adapterId;
+            const cacheKey = cacheManager.computeCacheKey(projection.item, adapterId);
+
+            if (isCacheEnabled) {
+              const cachedEntry = await projections.getSemanticCacheEntry(cacheKey);
+              if (cachedEntry) {
+                const ageSeconds = (Date.now() - new Date(cachedEntry.createdAt).getTime()) / 1000;
+                if (ageSeconds < cachedEntry.ttlSeconds) {
+                  await cacheManager.applyPatch(worktreePath, cachedEntry.diffPatch);
+                  const cachedResult: AdapterResult = {
+                    runId,
+                    adapterId,
+                    engineFamily: "mock",
+                    engineSurface: "mock",
+                    engineVersion: "1.0.0",
+                    status: cachedEntry.status,
+                    summary: cachedEntry.summary,
+                    assignmentEcho: {
+                      assignmentId: assignment.assignmentId,
+                      workItemId: projection.item.workItemId,
+                    },
+                    artifacts: cachedEntry.artifacts,
+                    changeClaims: cachedEntry.changeClaims,
+                    approvalsRequested: [],
+                    warnings: [],
+                    timestamps: {
+                      startedAt: cachedEntry.createdAt,
+                      lastActivityAt: cachedEntry.createdAt,
+                      endedAt: cachedEntry.createdAt,
+                      durationMs: 0,
+                    },
+                  };
+                  return {
+                    projection,
+                    worktreePath,
+                    branch,
+                    leaseId: lease.leaseId,
+                    workerId,
+                    cachedResult,
+                    cacheKey,
+                  };
+                }
+              }
+            }
+
             const handle = await adapter.launch(preparedAssignment);
             return {
               projection,
@@ -218,15 +313,40 @@ export class LocalCampaignService {
               leaseId: lease.leaseId,
               workerId,
               handle,
+              cacheKey,
             };
           })(),
         );
       }
 
       const prepared = await Promise.all(launchPromises);
-      const results = await Promise.all(prepared.map((entry) => adapter.collect(entry.handle)));
-      for (const [index, entry] of prepared.entries()) {
-        const result = results[index]!;
+      const results: AdapterResult[] = [];
+      for (const entry of prepared) {
+        let result: AdapterResult;
+        if (entry.cachedResult) {
+          result = entry.cachedResult;
+        } else if (entry.handle) {
+          result = await adapter.collect(entry.handle);
+          if (isCacheEnabled && (result.status === "completed" || (result.status as string) === "succeeded")) {
+            const diffPatch = await cacheManager.captureDiff(entry.worktreePath);
+            await projections.saveSemanticCacheEntry({
+              cacheKey: entry.cacheKey,
+              workItemId: entry.projection.item.workItemId,
+              adapterId: result.adapterId,
+              status: result.status,
+              summary: result.summary,
+              artifacts: result.artifacts ?? [],
+              changeClaims: result.changeClaims ?? [],
+              diffPatch,
+              createdAt: new Date().toISOString(),
+              ttlSeconds: options?.runtimeConfig?.semanticCache?.ttlSeconds ?? 86400,
+            });
+          }
+        } else {
+          throw new Error("Invalid launch state");
+        }
+        results.push(result);
+
         this.leases.assertAuthority(
           entry.projection.item.workItemId,
           entry.leaseId,
@@ -245,6 +365,7 @@ export class LocalCampaignService {
         ]);
         const streamId = `run:${runId}`;
         const expectedVersion = await streamVersion(events, streamId);
+        const tokenUsage = extractTokenUsage(result);
         const appended = await events.append({
           streamId,
           expectedStreamVersion: expectedVersion,
@@ -254,6 +375,7 @@ export class LocalCampaignService {
               item: entry.projection.item,
               status: 'succeeded',
               attempt: entry.projection.attempt + 1,
+              ...(tokenUsage ? { tokenUsage } : {}),
             } satisfies WorkItemProjection),
           ],
         });
@@ -296,6 +418,31 @@ export class LocalCampaignService {
     const { events, projections } = await this.openState();
     try {
       return await new Reconciler(events, projections, this.git).reconcile(this.repositoryRoot);
+    } finally {
+      await projections.close();
+    }
+  }
+
+
+  async cost(runId?: string): Promise<{
+    readonly totalInputTokens: number;
+    readonly totalOutputTokens: number;
+    readonly totalCostUsd: number;
+    readonly items: readonly {
+      readonly workItemId: string;
+      readonly runId: string;
+      readonly inputTokens: number;
+      readonly outputTokens: number;
+      readonly estimatedCostUsd: number;
+    }[];
+  }> {
+    const { events, projections } = await this.openState();
+    try {
+      await projections.rebuild(events.readAll());
+      const normalizedRunId = runId
+        ? ((runId.startsWith('campaign-') ? runIdFor(runId) : runId) as RunId)
+        : undefined;
+      return await projections.getCosts(normalizedRunId);
     } finally {
       await projections.close();
     }
@@ -552,4 +699,15 @@ function validateAdapterCompletion(
     );
   }
   if (!path.isAbsolute(worktreePath)) throw new Error('Worktree path must be absolute.');
+}
+
+function extractTokenUsage(result: AdapterResult): TokenUsage | undefined {
+  if (result.tokenUsage) return result.tokenUsage;
+  if (result.metadata && typeof result.metadata['tokenUsage'] === 'object' && result.metadata['tokenUsage'] !== null) {
+    return result.metadata['tokenUsage'] as TokenUsage;
+  }
+  if (result.metadata && typeof result.metadata['token_usage'] === 'object' && result.metadata['token_usage'] !== null) {
+    return result.metadata['token_usage'] as TokenUsage;
+  }
+  return undefined;
 }

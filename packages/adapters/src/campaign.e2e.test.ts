@@ -60,7 +60,7 @@ describe('offline campaign vertical slice', () => {
       ).toEqual([]);
       expect((await service.reconcile())['applied']).toBe(0);
     } finally {
-      await rm(root, { recursive: true, force: true });
+      await rm(root, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
     }
   }, 30_000);
 });

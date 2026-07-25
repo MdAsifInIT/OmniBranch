@@ -1,9 +1,11 @@
 import { randomUUID, createHash } from 'node:crypto';
-import { mkdir, open, readFile, realpath, rename, stat, unlink, writeFile } from 'node:fs/promises';
+import { mkdir, open, readFile, realpath, rename, stat, unlink, writeFile, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { execa } from 'execa';
 import pino, { type Logger } from 'pino';
+
+export type { Logger };
 
 import type {
   ArtifactId,
@@ -64,6 +66,58 @@ export const ids = {
   policyDecision: (value: string): PolicyDecisionId => value as PolicyDecisionId,
 };
 
+
+export class BoundedRingBuffer {
+  private chunks: Buffer[] = [];
+  private currentBytes = 0;
+
+  public constructor(private readonly maxBytes: number = 10 * 1024 * 1024) {
+    if (maxBytes <= 0) {
+      throw new Error('maxBytes must be positive');
+    }
+  }
+
+  public append(data: string | Uint8Array): void {
+    const buf =
+      typeof data === 'string'
+        ? Buffer.from(data, 'utf8')
+        : Buffer.from(data.buffer, data.byteOffset, data.byteLength);
+
+    if (buf.length === 0) return;
+
+    if (buf.length >= this.maxBytes) {
+      this.chunks = [buf.subarray(buf.length - this.maxBytes)];
+      this.currentBytes = this.maxBytes;
+      return;
+    }
+
+    this.chunks.push(buf);
+    this.currentBytes += buf.length;
+
+    while (this.currentBytes > this.maxBytes && this.chunks.length > 0) {
+      const overflow = this.currentBytes - this.maxBytes;
+      const head = this.chunks[0]!;
+      if (head.length <= overflow) {
+        this.currentBytes -= head.length;
+        this.chunks.shift();
+      } else {
+        this.chunks[0] = head.subarray(overflow);
+        this.currentBytes -= overflow;
+        break;
+      }
+    }
+  }
+
+  public toString(encoding: BufferEncoding = 'utf8'): string {
+    if (this.chunks.length === 0) return '';
+    return Buffer.concat(this.chunks, this.currentBytes).toString(encoding);
+  }
+
+  public get byteLength(): number {
+    return this.currentBytes;
+  }
+}
+
 export interface ProcessRequest {
   readonly executable: string;
   readonly args: readonly string[];
@@ -73,6 +127,11 @@ export interface ProcessRequest {
   readonly input?: string;
   readonly reject?: boolean;
   readonly signal?: AbortSignal;
+  readonly buffer?: boolean;
+  readonly maxBufferBytes?: number;
+  readonly onStdout?: (chunk: string) => void;
+  readonly onStderr?: (chunk: string) => void;
+  readonly logger?: Logger;
 }
 
 export interface ProcessResult {
@@ -114,35 +173,74 @@ export class ExecaProcessRunner implements ProcessRunner {
       throw new Error('Process arguments must not contain NUL bytes');
     }
     const started = this.clock.now().getTime();
-    const promise = execa(request.executable, [...request.args], {
+    const useBuffer = request.buffer ?? true;
+    const maxBytes = request.maxBufferBytes ?? 10 * 1024 * 1024;
+    const stdoutBuffer = new BoundedRingBuffer(maxBytes);
+    const stderrBuffer = new BoundedRingBuffer(maxBytes);
+
+    const subprocess = execa(request.executable, [...request.args], {
       cwd: request.cwd,
       reject: request.reject ?? false,
       shell: false,
       windowsHide: true,
+      buffer: useBuffer,
       ...(request.env === undefined ? {} : { env: { ...request.env } }),
       ...(request.timeoutMs === undefined ? {} : { timeout: request.timeoutMs }),
       ...(request.input === undefined ? {} : { input: request.input }),
       ...(request.signal === undefined ? {} : { cancelSignal: request.signal }),
     });
 
-    this.activeProcesses.add(promise);
+    this.activeProcesses.add(subprocess);
 
-    try {
-      const result = await promise;
-      const exitCode = result.exitCode ?? (result.failed ? 1 : 0);
-      return {
-        executable: request.executable,
-        args: request.args,
-        cwd: request.cwd,
-        exitCode,
-        stdout: String(result.stdout ?? ''),
-        stderr: String(result.stderr ?? ''),
-        durationMs: Math.max(0, this.clock.now().getTime() - started),
-        timedOut: result.timedOut,
-      };
-    } finally {
-      this.activeProcesses.delete(promise);
+    if (subprocess.stdout) {
+      subprocess.stdout.on('data', (chunk: Buffer | string) => {
+        const text = typeof chunk === 'string' ? chunk : chunk.toString('utf8');
+        stdoutBuffer.append(text);
+        request.onStdout?.(text);
+        request.logger?.debug({ stream: 'stdout', data: text }, text);
+      });
     }
+
+    if (subprocess.stderr) {
+      subprocess.stderr.on('data', (chunk: Buffer | string) => {
+        const text = typeof chunk === 'string' ? chunk : chunk.toString('utf8');
+        stderrBuffer.append(text);
+        request.onStderr?.(text);
+        request.logger?.debug({ stream: 'stderr', data: text }, text);
+      });
+    }
+
+    let result: any;
+    try {
+      result = await subprocess;
+    } catch (error: any) {
+      result = error;
+    } finally {
+      this.activeProcesses.delete(subprocess);
+    }
+
+    const exitCode = result.exitCode ?? (result.failed ? 1 : 0);
+    const stdoutStr = stdoutBuffer.toString();
+    const stderrStr = stderrBuffer.toString();
+    const stdout =
+      useBuffer && typeof result.stdout === 'string' && result.stdout.length > 0
+        ? result.stdout
+        : stdoutStr;
+    const stderr =
+      useBuffer && typeof result.stderr === 'string' && result.stderr.length > 0
+        ? result.stderr
+        : stderrStr;
+
+    return {
+      executable: request.executable,
+      args: request.args,
+      cwd: request.cwd,
+      exitCode,
+      stdout,
+      stderr,
+      durationMs: Math.max(0, this.clock.now().getTime() - started),
+      timedOut: Boolean(result.timedOut),
+    };
   }
 }
 
@@ -265,7 +363,7 @@ export class FileMutex {
           }
         }
         
-        await new Promise((resolve) => setTimeout(resolve, 100 + Math.random() * 100));
+        throw new Error(`Resource is locked and not stale: ${this.lockPath}`);
       }
     }
   }
@@ -277,7 +375,7 @@ export class FileMutex {
       try {
         const current = await readFile(this.lockPath, 'utf8');
         if (current.includes(`"nonce":"${this.nonce}"`)) {
-          await unlink(this.lockPath);
+          await rm(this.lockPath, { force: true, maxRetries: 5, retryDelay: 50 });
         }
       } catch {
         // Ignore read/unlink errors

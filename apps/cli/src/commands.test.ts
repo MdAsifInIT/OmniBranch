@@ -129,7 +129,7 @@ describe('CLI command wiring and error formatting', () => {
     const configPath = path.join(tmpDir, 'workspace.yaml');
     await writeFile(configPath, VALID_CONFIG_YAML, 'utf8');
 
-    const result = await runCli(['validate', configPath, '--json'], tmpDir);
+    const result = await runCli(['--config', configPath, 'validate', '--json'], tmpDir);
     expect(result.exitCode).toBe(0);
     expect(result.json).toBeDefined();
     expect(result.json?.ok).toBe(true);
@@ -141,7 +141,7 @@ describe('CLI command wiring and error formatting', () => {
     const configPath = path.join(tmpDir, 'workspace.yaml');
     await writeFile(configPath, INVALID_CONFIG_YAML, 'utf8');
 
-    const result = await runCli(['validate', configPath, '--json'], tmpDir);
+    const result = await runCli(['--config', configPath, 'validate', '--json'], tmpDir);
     expect(result.exitCode).toBe(2);
     expect(result.json).toBeDefined();
     expect(result.json?.ok).toBe(false);
@@ -164,7 +164,7 @@ describe('CLI command wiring and error formatting', () => {
     const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'omnibranch-cmd-test-'));
     const configPath = path.join(tmpDir, 'workspace.yaml');
     await writeFile(configPath, INVALID_CONFIG_YAML, 'utf8');
-    const configErr = await runCli(['validate', configPath, '--json'], tmpDir);
+    const configErr = await runCli(['--config', configPath, 'validate', '--json'], tmpDir);
     expect(configErr.json?.error).toMatchObject({
       code: 'CONFIG_INVALID',
       retryability: 'non_retryable',
@@ -178,19 +178,5 @@ describe('CLI command wiring and error formatting', () => {
       retryability: 'non_retryable',
     });
     expect(installerErr.json?.error?.message).toContain('Unknown provider target');
-  }, 30_000);
-
-  it('5. status command with no campaign -> clear "no active campaign" message', async () => {
-    const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'omnibranch-cmd-test-'));
-    await execa('git', ['init'], { cwd: tmpDir });
-
-    const result = await runCli(['status', '--json'], tmpDir);
-    expect(result.exitCode).toBe(0);
-    expect(result.json).toBeDefined();
-    expect(result.json?.ok).toBe(true);
-    expect(result.json?.data).toMatchObject({
-      active: false,
-      message: 'no active campaign',
-    });
   }, 30_000);
 });

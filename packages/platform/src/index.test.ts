@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   FileMutex,
   atomicWrite,
@@ -10,7 +10,7 @@ import {
   FakeClock,
 } from './index.js';
 import { mkdir, rm, stat, readFile, symlink, writeFile, realpath } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import os from 'node:os';
 
@@ -57,15 +57,23 @@ describe('platform package', () => {
       await mutex2.release();
     });
 
-    it('should handle contention (throw when locked)', async () => {
+    it('should handle contention by waiting', async () => {
       const lockPath = join(tmpDir, 'contention.lock');
       const mutex1 = new FileMutex(lockPath, 60000);
       await mutex1.acquire('owner-1');
       
       const mutex2 = new FileMutex(lockPath, 60000);
-      await expect(mutex2.acquire('owner-2')).rejects.toThrow(/Resource is locked/);
+      let acquired = false;
+      const p = mutex2.acquire('owner-2').then(() => { acquired = true; });
+      
+      await new Promise(r => setTimeout(r, 200));
+      expect(acquired).toBe(false);
       
       await mutex1.release();
+      await p;
+      expect(acquired).toBe(true);
+      
+      await mutex2.release();
     });
   });
 

@@ -1,5 +1,7 @@
 # Initial Implementation Backlog
 
+> **Status update (v0.3.0):** Epics 0 through 7 and Phase 1-5 architectural enhancements (CAS FileMutex, config cycle detection, schema migrations, token/cost tracking, semantic prompt caching, and observability docs) are implemented.
+
 > **Historical backlog:** This decomposition is preserved for design traceability and is not the current contributor task list. Use GitHub issues and [Contributing](../CONTRIBUTING.md) for active work.
 
 This backlog is ordered by dependency. Do not start real AI adapters before the deterministic mock-adapter vertical slice passes recovery and concurrency tests.

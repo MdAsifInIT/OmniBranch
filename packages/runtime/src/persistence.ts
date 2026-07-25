@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import { mkdir, open, stat, copyFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
@@ -15,6 +16,7 @@ import type {
   RepositoryFacts,
   RepositoryStatus,
   RunId,
+  TokenUsage,
   WorkItem,
   WorkItemProjection,
   WorkItemStatus,
@@ -28,6 +30,7 @@ import {
   type ProcessRunner,
 } from '@omnibranch/platform';
 
+import type { SemanticCacheEntry } from './semantic-cache.js';
 import { RepositoryDiscovery } from './repository.js';
 
 export class JsonlEventStore implements EventStore {
@@ -72,11 +75,29 @@ export class JsonlEventStore implements EventStore {
       }
       let globalSequence = existing.at(-1)?.globalSequence ?? 0;
       let streamVersion = currentVersion;
-      const appended: EventEnvelope[] = request.events.map((event) => ({
-        ...event,
-        globalSequence: ++globalSequence,
-        streamVersion: ++streamVersion,
-      }));
+      const secret = process.env.OMNIBRANCH_AUDIT_SECRET;
+      let lastHmac = existing.at(-1)?.hmac ?? '';
+      const appended: EventEnvelope[] = request.events.map((event) => {
+        const nextGlobal = ++globalSequence;
+        const nextStreamVersion = ++streamVersion;
+        const envelopeWithoutHmac = {
+          ...event,
+          globalSequence: nextGlobal,
+          streamVersion: nextStreamVersion,
+        };
+        let hmac: string | undefined = undefined;
+        if (secret) {
+          hmac = crypto
+            .createHmac('sha256', secret)
+            .update(lastHmac + ':' + JSON.stringify(envelopeWithoutHmac))
+            .digest('hex');
+          lastHmac = hmac;
+        }
+        return {
+          ...envelopeWithoutHmac,
+          ...(hmac ? { hmac } : {}),
+        };
+      });
       await mkdir(path.dirname(this.filePath), { recursive: true });
       const handle = await open(this.filePath, 'a', 0o600);
       try {
@@ -101,6 +122,30 @@ export class JsonlEventStore implements EventStore {
     for (const event of await this.load()) {
       if (event.streamId === streamId && event.streamVersion > afterVersion) yield event;
     }
+  }
+
+  async verifyHmacChain(providedSecret?: string): Promise<{ readonly valid: boolean; readonly errors: readonly string[] }> {
+    const secret = providedSecret ?? process.env.OMNIBRANCH_AUDIT_SECRET;
+    if (!secret) return { valid: true, errors: [] };
+    const events = await this.load();
+    const errors: string[] = [];
+    let prevHmac = '';
+    for (const [index, event] of events.entries()) {
+      if (!event.hmac) {
+        errors.push('Event at index ' + index + ' (id: ' + event.eventId + ') is missing HMAC.');
+        continue;
+      }
+      const { hmac, ...rest } = event;
+      const expectedHmac = crypto
+        .createHmac('sha256', secret)
+        .update(prevHmac + ':' + JSON.stringify(rest))
+        .digest('hex');
+      if (event.hmac !== expectedHmac) {
+        errors.push('HMAC mismatch at global sequence ' + event.globalSequence + ' (event ID ' + event.eventId + ').');
+      }
+      prevHmac = event.hmac;
+    }
+    return { valid: errors.length === 0, errors };
   }
 
   async verify(): Promise<{
@@ -238,16 +283,17 @@ export class EventStoreError extends Error {
   }
 }
 
-export class SqliteProjectionStore implements ProjectionStore {
-  private database: Database.Database | undefined;
+export interface SchemaMigration {
+  readonly version: number;
+  readonly description: string;
+  readonly sql: string;
+}
 
-  public constructor(private readonly databasePath: string) {}
-
-  async open(): Promise<void> {
-    await mkdir(path.dirname(this.databasePath), { recursive: true });
-    this.database = new Database(this.databasePath);
-    this.database.pragma('journal_mode = WAL');
-    this.database.exec(`
+export const PROJECTION_SCHEMA_MIGRATIONS: readonly SchemaMigration[] = [
+  {
+    version: 1,
+    description: 'Initial schema',
+    sql: `
       CREATE TABLE IF NOT EXISTS applied_events (
         event_id TEXT PRIMARY KEY,
         global_sequence INTEGER NOT NULL UNIQUE,
@@ -269,7 +315,89 @@ export class SqliteProjectionStore implements ProjectionStore {
         failure_json TEXT
       );
       CREATE INDEX IF NOT EXISTS work_items_run_id ON work_items(run_id);
+    `,
+  },
+  {
+    version: 2,
+    description: 'Add token_usage and cost_usd',
+    sql: `
+      ALTER TABLE work_items ADD COLUMN token_usage TEXT;
+      ALTER TABLE work_items ADD COLUMN cost_usd REAL DEFAULT 0;
+    `,
+  },
+  {
+    version: 3,
+    description: 'Add semantic_cache table',
+    sql: `
+      CREATE TABLE IF NOT EXISTS semantic_cache (
+        cache_key TEXT PRIMARY KEY,
+        work_item_id TEXT NOT NULL,
+        adapter_id TEXT NOT NULL,
+        status TEXT NOT NULL,
+        summary TEXT NOT NULL,
+        artifacts_json TEXT NOT NULL,
+        change_claims_json TEXT NOT NULL,
+        diff_patch TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        ttl_seconds INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_semantic_cache_created ON semantic_cache(created_at);
+    `,
+  },
+];
+
+export class SqliteProjectionStore implements ProjectionStore {
+  private database: Database.Database | undefined;
+
+  public constructor(private readonly databasePath: string) {}
+
+  async open(): Promise<void> {
+    await mkdir(path.dirname(this.databasePath), { recursive: true });
+    this.database = new Database(this.databasePath);
+    this.database.pragma('journal_mode = WAL');
+    this.database.exec(`
+      CREATE TABLE IF NOT EXISTS schema_migrations (
+        version INTEGER PRIMARY KEY,
+        applied_at TEXT,
+        description TEXT
+      );
     `);
+
+    const appliedRows = this.database
+      .prepare('SELECT version FROM schema_migrations')
+      .all() as { version: number }[];
+    const appliedVersions = new Set(appliedRows.map((row) => row.version));
+
+    const unapplied = PROJECTION_SCHEMA_MIGRATIONS.filter(
+      (migration) => !appliedVersions.has(migration.version),
+    ).sort((a, b) => a.version - b.version);
+
+    if (unapplied.length > 0) {
+      const recordMigration = this.database.prepare(
+        'INSERT INTO schema_migrations (version, applied_at, description) VALUES (?, ?, ?)',
+      );
+      this.database.transaction(() => {
+        for (const migration of unapplied) {
+          this.database!.exec(migration.sql);
+          recordMigration.run(
+            migration.version,
+            new Date().toISOString(),
+            migration.description,
+          );
+        }
+      })();
+    }
+  }
+
+  async getAppliedMigrations(): Promise<readonly { version: number; appliedAt: string; description: string }[]> {
+    const rows = this.requireDatabase()
+      .prepare('SELECT version, applied_at, description FROM schema_migrations ORDER BY version ASC')
+      .all() as { version: number; applied_at: string; description: string }[];
+    return rows.map((row) => ({
+      version: row.version,
+      appliedAt: row.applied_at,
+      description: row.description,
+    }));
   }
 
   async close(): Promise<void> {
@@ -289,12 +417,12 @@ export class SqliteProjectionStore implements ProjectionStore {
       'INSERT OR IGNORE INTO applied_events(event_id, global_sequence, type, payload) VALUES (?, ?, ?, ?)',
     );
     const upsert = database.prepare(`
-      INSERT INTO work_items(work_item_id, run_id, item_json, status, attempt, next_eligible_at, lease_id, failure_json)
-      VALUES (@workItemId, @runId, @itemJson, @status, @attempt, @nextEligibleAt, @leaseId, @failureJson)
+      INSERT INTO work_items(work_item_id, run_id, item_json, status, attempt, next_eligible_at, lease_id, failure_json, token_usage, cost_usd)
+      VALUES (@workItemId, @runId, @itemJson, @status, @attempt, @nextEligibleAt, @leaseId, @failureJson, @tokenUsage, @costUsd)
       ON CONFLICT(work_item_id) DO UPDATE SET
         item_json=excluded.item_json, status=excluded.status, attempt=excluded.attempt,
         next_eligible_at=excluded.next_eligible_at, lease_id=excluded.lease_id,
-        failure_json=excluded.failure_json
+        failure_json=excluded.failure_json, token_usage=excluded.token_usage, cost_usd=excluded.cost_usd
     `);
     const checkpoint = database.prepare(
       `INSERT INTO projection_meta(key, value) VALUES ('checkpoint', ?)
@@ -321,6 +449,8 @@ export class SqliteProjectionStore implements ProjectionStore {
             leaseId: event.payload.leaseId ?? null,
             failureJson:
               event.payload.failure === undefined ? null : JSON.stringify(event.payload.failure),
+            tokenUsage: event.payload.tokenUsage ? JSON.stringify(event.payload.tokenUsage) : null,
+            costUsd: event.payload.tokenUsage?.estimatedCostUsd ?? 0,
           });
         }
         latest = Math.max(latest, event.globalSequence);
@@ -336,10 +466,36 @@ export class SqliteProjectionStore implements ProjectionStore {
     return row === undefined ? 0 : Number(row.value);
   }
 
+  async getSemanticCacheEntry(cacheKey: string): Promise<SemanticCacheEntry | null> {
+    const row = this.requireDatabase().prepare("SELECT * FROM semantic_cache WHERE cache_key = ?").get(cacheKey) as any;
+    if (!row) return null;
+    return {
+      cacheKey: row.cache_key,
+      workItemId: row.work_item_id,
+      adapterId: row.adapter_id,
+      status: row.status,
+      summary: row.summary,
+      artifacts: JSON.parse(row.artifacts_json),
+      changeClaims: JSON.parse(row.change_claims_json),
+      diffPatch: row.diff_patch,
+      createdAt: row.created_at,
+      ttlSeconds: row.ttl_seconds,
+    };
+  }
+
+  async saveSemanticCacheEntry(entry: SemanticCacheEntry): Promise<void> {
+    this.requireDatabase().prepare("INSERT INTO semantic_cache (cache_key, work_item_id, adapter_id, status, summary, artifacts_json, change_claims_json, diff_patch, created_at, ttl_seconds) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(cache_key) DO UPDATE SET work_item_id=excluded.work_item_id, adapter_id=excluded.adapter_id, status=excluded.status, summary=excluded.summary, artifacts_json=excluded.artifacts_json, change_claims_json=excluded.change_claims_json, diff_patch=excluded.diff_patch, created_at=excluded.created_at, ttl_seconds=excluded.ttl_seconds").run(entry.cacheKey, entry.workItemId, entry.adapterId, entry.status, entry.summary, JSON.stringify(entry.artifacts), JSON.stringify(entry.changeClaims), entry.diffPatch, entry.createdAt, entry.ttlSeconds);
+  }
+
+  async deleteSemanticCacheEntry(cacheKey: string): Promise<void> {
+    this.requireDatabase().prepare("DELETE FROM semantic_cache WHERE cache_key = ?").run(cacheKey);
+  }
+
+
   async getWorkItems(runId: RunId): Promise<readonly WorkItemProjection[]> {
     const rows = this.requireDatabase()
       .prepare(
-        'SELECT item_json, status, attempt, next_eligible_at, lease_id, failure_json FROM work_items WHERE run_id=? ORDER BY work_item_id',
+        'SELECT item_json, status, attempt, next_eligible_at, lease_id, failure_json, token_usage FROM work_items WHERE run_id=? ORDER BY work_item_id',
       )
       .all(runId) as {
       item_json: string;
@@ -348,6 +504,7 @@ export class SqliteProjectionStore implements ProjectionStore {
       next_eligible_at: string | null;
       lease_id: string | null;
       failure_json: string | null;
+      token_usage: string | null;
     }[];
     return rows.map((row) => ({
       item: JSON.parse(row.item_json) as WorkItem,
@@ -360,7 +517,84 @@ export class SqliteProjectionStore implements ProjectionStore {
       ...(row.failure_json === null
         ? {}
         : { failure: JSON.parse(row.failure_json) as NonNullable<WorkItemProjection['failure']> }),
+      ...(row.token_usage === null || row.token_usage === undefined
+        ? {}
+        : { tokenUsage: JSON.parse(row.token_usage) as NonNullable<WorkItemProjection['tokenUsage']> }),
     }));
+  }
+
+  
+
+  async getCosts(runId?: RunId): Promise<{
+    readonly totalInputTokens: number;
+    readonly totalOutputTokens: number;
+    readonly totalCostUsd: number;
+    readonly items: readonly {
+      readonly workItemId: string;
+      readonly runId: string;
+      readonly inputTokens: number;
+      readonly outputTokens: number;
+      readonly estimatedCostUsd: number;
+    }[];
+  }> {
+    const db = this.requireDatabase();
+    const rows = runId
+      ? (db
+          .prepare(
+            'SELECT work_item_id, run_id, token_usage, cost_usd FROM work_items WHERE run_id=?',
+          )
+          .all(runId) as {
+          work_item_id: string;
+          run_id: string;
+          token_usage: string | null;
+          cost_usd: number;
+        }[])
+      : (db
+          .prepare('SELECT work_item_id, run_id, token_usage, cost_usd FROM work_items')
+          .all() as {
+          work_item_id: string;
+          run_id: string;
+          token_usage: string | null;
+          cost_usd: number;
+        }[]);
+
+    let totalInputTokens = 0;
+    let totalOutputTokens = 0;
+    let totalCostUsd = 0;
+    const items = rows.map((row) => {
+      let inputTokens = 0;
+      let outputTokens = 0;
+      let estimatedCostUsd = row.cost_usd ?? 0;
+      if (row.token_usage) {
+        try {
+          const parsed = JSON.parse(row.token_usage) as TokenUsage;
+          inputTokens = parsed.inputTokens ?? 0;
+          outputTokens = parsed.outputTokens ?? 0;
+          if (parsed.estimatedCostUsd !== undefined) {
+            estimatedCostUsd = parsed.estimatedCostUsd;
+          }
+        } catch {
+          // ignore
+        }
+      }
+      totalInputTokens += inputTokens;
+      totalOutputTokens += outputTokens;
+      totalCostUsd += estimatedCostUsd;
+      return {
+        workItemId: row.work_item_id,
+        runId: row.run_id,
+        inputTokens,
+        outputTokens,
+        estimatedCostUsd,
+      };
+    });
+
+    return {
+      totalInputTokens,
+      totalOutputTokens,
+      totalCostUsd,
+      items,
+    };
   }
 
   async rebuild(events: AsyncIterable<EventEnvelope>): Promise<void> {

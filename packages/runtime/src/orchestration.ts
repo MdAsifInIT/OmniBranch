@@ -2,6 +2,7 @@ import picomatch from 'picomatch';
 
 import type {
   ActionClass,
+  ModelProfile,
   ActionRequest,
   Approval,
   Lease,
@@ -18,6 +19,7 @@ import type {
   WorkItemStatus,
   WorkerId,
 } from '@omnibranch/contracts';
+import { selectModel } from './model-router.js';
 import {
   ids,
   isPathInside,
@@ -174,6 +176,8 @@ export class DeterministicScheduler implements Scheduler {
     const selected: WorkItemProjection[] = [];
     const laneUsage = { ...input.activeByLane };
     const adapterUsage = { ...input.activeByAdapter };
+    const availableModels = input.availableModels;
+
     const candidates = input.items
       .filter((projection) => {
         if (projection.status !== 'ready') return false;
@@ -196,6 +200,15 @@ export class DeterministicScheduler implements Scheduler {
         const depthOrder =
           (depth.get(left.item.workItemId) ?? 0) - (depth.get(right.item.workItemId) ?? 0);
         if (depthOrder !== 0) return depthOrder;
+
+        if (availableModels !== undefined) {
+          const leftModel = resolveModelForCandidate(left, availableModels);
+          const rightModel = resolveModelForCandidate(right, availableModels);
+          if (leftModel && rightModel && leftModel.cost !== rightModel.cost) {
+            return leftModel.cost - rightModel.cost;
+          }
+        }
+
         const identity = left.item.workItemId.localeCompare(right.item.workItemId);
         return identity !== 0 ? identity : left.attempt - right.attempt;
       });
@@ -212,11 +225,56 @@ export class DeterministicScheduler implements Scheduler {
         adapterUsage[adapter] = (adapterUsage[adapter] ?? 0) + 1;
       }
       laneUsage[lane] = (laneUsage[lane] ?? 0) + 1;
-      selected.push(candidate);
+
+      let modelHint = candidate.modelHint ?? candidate.item.modelHint;
+      if (availableModels !== undefined) {
+        const selectedModel = resolveModelForCandidate(candidate, availableModels);
+        if (selectedModel !== undefined) {
+          modelHint = selectedModel.id;
+        }
+      }
+
+      if (modelHint !== undefined) {
+        selected.push({
+          ...candidate,
+          modelHint,
+          item: {
+            ...candidate.item,
+            modelHint,
+          },
+        });
+      } else {
+        selected.push(candidate);
+      }
     }
     return selected;
   }
 }
+
+function resolveModelForCandidate(
+  candidate: WorkItemProjection,
+  modelsInput: Readonly<Record<string, readonly ModelProfile[]>> | readonly ModelProfile[],
+): ModelProfile | undefined {
+  let modelPool: readonly ModelProfile[] = [];
+  if (Array.isArray(modelsInput)) {
+    const laneFiltered = modelsInput.filter((m) => {
+      if (m.lane && m.lane !== candidate.item.lane) return false;
+      if (m.adapterId && candidate.item.adapterId && m.adapterId !== candidate.item.adapterId) return false;
+      return true;
+    });
+    modelPool = laneFiltered.length > 0 ? laneFiltered : modelsInput;
+  } else {
+    const record = modelsInput as Readonly<Record<string, readonly ModelProfile[]>>;
+    modelPool =
+      record[candidate.item.lane] ??
+      (candidate.item.adapterId ? record[candidate.item.adapterId] : undefined) ??
+      record['default'] ??
+      [];
+  }
+  if (modelPool.length === 0) return undefined;
+  return selectModel(candidate.item, modelPool);
+}
+
 
 export function normalizeOwnership(scope: OwnershipScope): OwnershipScope {
   return {

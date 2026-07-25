@@ -81,6 +81,11 @@ export class MockAiAdapter implements AiEngineAdapter {
   }
 
   async prepare(assignment: AssignmentEnvelope): Promise<PreparedAssignment> {
+    const modelHint =
+      assignment.modelHint ??
+      (typeof assignment.context?.['modelHint'] === 'string'
+        ? (assignment.context['modelHint'] as string)
+        : undefined);
     if (!assignment.scope.writeAllowed) {
       return {
         adapterId: this.adapterId,
@@ -88,6 +93,7 @@ export class MockAiAdapter implements AiEngineAdapter {
         prompt: JSON.stringify(assignment),
         assignment,
         guided: true,
+        ...(modelHint !== undefined ? { modelHint } : {}),
       };
     }
     return {
@@ -96,6 +102,7 @@ export class MockAiAdapter implements AiEngineAdapter {
       prompt: JSON.stringify(assignment),
       assignment,
       guided: false,
+      ...(modelHint !== undefined ? { modelHint } : {}),
     };
   }
 

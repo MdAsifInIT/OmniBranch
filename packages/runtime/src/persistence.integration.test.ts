@@ -81,6 +81,27 @@ describe('canonical events and projections', () => {
     });
   });
 
+  it('tracks schema migrations and applies initial migration on open', async () => {
+    await withTemporaryDirectory('omnibranch-migration-', async (directory) => {
+      const databasePath = path.join(directory, 'state.db');
+      const store = new SqliteProjectionStore(databasePath);
+      await store.open();
+      const migrations = await store.getAppliedMigrations();
+      expect(migrations).toHaveLength(1);
+      expect(migrations[0]?.version).toBe(1);
+      expect(migrations[0]?.description).toBe('Initial schema');
+      expect(migrations[0]?.appliedAt).toBeTruthy();
+      await store.close();
+
+      // Re-opening should not re-apply or duplicate migration entry
+      const store2 = new SqliteProjectionStore(databasePath);
+      await store2.open();
+      const migrations2 = await store2.getAppliedMigrations();
+      expect(migrations2).toHaveLength(1);
+      await store2.close();
+    });
+  });
+
   it('detects a corrupted ledger without fabricating events', async () => {
     await withTemporaryDirectory('omnibranch-state-', async (directory) => {
       const eventPath = path.join(directory, 'events.jsonl');

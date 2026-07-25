@@ -12,8 +12,18 @@ import type {
   PreparedAssignment,
   ResumeLevel,
 } from '@omnibranch/contracts';
-import type { Clock, IdGenerator, ProcessResult, ProcessRunner } from '@omnibranch/platform';
+import type { Clock, IdGenerator, Logger, ProcessResult, ProcessRunner } from '@omnibranch/platform';
 import { SystemClock, UuidGenerator, redact } from '@omnibranch/platform';
+
+
+export interface CliAdapterOptions {
+  readonly clock?: Clock;
+  readonly idsGenerator?: IdGenerator;
+  readonly logger?: Logger;
+  readonly onStdout?: (chunk: string) => void;
+  readonly onStderr?: (chunk: string) => void;
+  readonly maxBufferBytes?: number;
+}
 
 export interface EngineProfile {
   readonly adapterId: string;
@@ -45,13 +55,47 @@ interface RunRecord {
 export class CliEngineAdapter implements AiEngineAdapter {
   private readonly runs = new Map<string, RunRecord>();
   private lastProbe: AdapterProbe | undefined;
+  private readonly clock: Clock;
+  private readonly idsGenerator: IdGenerator;
+  private readonly logger: Logger | undefined;
+  private readonly onStdout: ((chunk: string) => void) | undefined;
+  private readonly onStderr: ((chunk: string) => void) | undefined;
+  private readonly maxBufferBytes: number;
 
   public constructor(
     private readonly profile: EngineProfile,
     private readonly runner: ProcessRunner,
-    private readonly clock: Clock = new SystemClock(),
-    private readonly idsGenerator: IdGenerator = new UuidGenerator(),
-  ) {}
+    clockOrOptions?: Clock | CliAdapterOptions,
+    idsGenerator?: IdGenerator,
+    logger?: Logger,
+    onStdout?: (chunk: string) => void,
+    onStderr?: (chunk: string) => void,
+    maxBufferBytes?: number,
+  ) {
+    if (clockOrOptions !== undefined && 'now' in clockOrOptions) {
+      this.clock = clockOrOptions;
+      this.idsGenerator = idsGenerator ?? new UuidGenerator();
+      this.logger = logger;
+      this.onStdout = onStdout;
+      this.onStderr = onStderr;
+      this.maxBufferBytes = maxBufferBytes ?? 10 * 1024 * 1024;
+    } else if (clockOrOptions !== undefined) {
+      const opts = clockOrOptions as CliAdapterOptions;
+      this.clock = opts.clock ?? new SystemClock();
+      this.idsGenerator = opts.idsGenerator ?? idsGenerator ?? new UuidGenerator();
+      this.logger = opts.logger ?? logger;
+      this.onStdout = opts.onStdout ?? onStdout;
+      this.onStderr = opts.onStderr ?? onStderr;
+      this.maxBufferBytes = opts.maxBufferBytes ?? maxBufferBytes ?? 10 * 1024 * 1024;
+    } else {
+      this.clock = new SystemClock();
+      this.idsGenerator = idsGenerator ?? new UuidGenerator();
+      this.logger = logger;
+      this.onStdout = onStdout;
+      this.onStderr = onStderr;
+      this.maxBufferBytes = maxBufferBytes ?? 10 * 1024 * 1024;
+    }
+  }
 
   async probe(): Promise<AdapterProbe> {
     if (this.profile.executable === undefined) {
@@ -98,12 +142,18 @@ export class CliEngineAdapter implements AiEngineAdapter {
       probe.capabilities.cancellation === 'unsupported' ||
       probe.capabilities.policy_controls === 'unknown' ||
       probe.capabilities.policy_controls === 'unsupported';
+    const modelHint =
+      assignment.modelHint ??
+      (typeof assignment.context?.['modelHint'] === 'string'
+        ? (assignment.context['modelHint'] as string)
+        : undefined);
     return {
       adapterId: this.profile.adapterId as AdapterId,
       workingDirectory: assignment.scope.repositoryRoot,
       prompt: materializeAssignment(assignment),
       assignment,
       guided,
+      ...(modelHint !== undefined ? { modelHint } : {}),
     };
   }
 
@@ -136,6 +186,11 @@ export class CliEngineAdapter implements AiEngineAdapter {
           args: this.profile.launchArguments(prepared),
           cwd: prepared.workingDirectory,
           input: prepared.prompt,
+          buffer: false,
+          maxBufferBytes: this.maxBufferBytes,
+          ...(this.logger === undefined ? {} : { logger: this.logger }),
+          ...(this.onStdout === undefined ? {} : { onStdout: this.onStdout }),
+          ...(this.onStderr === undefined ? {} : { onStderr: this.onStderr }),
           ...(signal === undefined ? {} : { signal }),
         });
         output = (this.profile.parseResult ?? normalizeProcessResult)(processResult);
@@ -237,16 +292,19 @@ export class CliEngineAdapter implements AiEngineAdapter {
 export function createCodexAdapter(
   runner: ProcessRunner,
   launchArguments?: EngineProfile['launchArguments'],
+  options?: CliAdapterOptions,
 ): CliEngineAdapter {
   return new CliEngineAdapter(
-    profile('codex-cli', 'Codex', 'CLI', 'codex', /codex/i, 2, 'checkpoint', launchArguments),
+    profile('codex-cli', 'Codex', 'CLI', 'codex', /codex/i, 2, 'checkpoint', launchArguments ?? defaultAdapterLaunchArguments),
     runner,
+    options,
   );
 }
 
 export function createClaudeCodeAdapter(
   runner: ProcessRunner,
   launchArguments?: EngineProfile['launchArguments'],
+  options?: CliAdapterOptions,
 ): CliEngineAdapter {
   return new CliEngineAdapter(
     profile(
@@ -260,12 +318,14 @@ export function createClaudeCodeAdapter(
       launchArguments,
     ),
     runner,
+    options,
   );
 }
 
 export function createOpenCodeAdapter(
   runner: ProcessRunner,
   launchArguments?: EngineProfile['launchArguments'],
+  options?: CliAdapterOptions,
 ): CliEngineAdapter {
   return new CliEngineAdapter(
     profile(
@@ -279,12 +339,14 @@ export function createOpenCodeAdapter(
       launchArguments,
     ),
     runner,
+    options,
   );
 }
 
 export function createAntigravityCliAdapter(
   runner: ProcessRunner,
   launchArguments?: EngineProfile['launchArguments'],
+  options?: CliAdapterOptions,
 ): CliEngineAdapter {
   return new CliEngineAdapter(
     profile(
@@ -298,13 +360,18 @@ export function createAntigravityCliAdapter(
       launchArguments,
     ),
     runner,
+    options,
   );
 }
 
-export function createAntigravityIdeAdapter(runner: ProcessRunner): CliEngineAdapter {
+export function createAntigravityIdeAdapter(
+  runner: ProcessRunner,
+  options?: CliAdapterOptions,
+): CliEngineAdapter {
   return new CliEngineAdapter(
     profile('antigravity-ide', 'Antigravity', 'IDE', undefined, undefined, 3, 'handoff'),
     runner,
+    options,
   );
 }
 
@@ -470,4 +537,12 @@ function firstLine(value: string): string {
 
 function isAborted(signal: AbortSignal | undefined): boolean {
   return signal?.aborted === true;
+}
+
+function defaultAdapterLaunchArguments(prepared: PreparedAssignment): readonly string[] {
+  const args = ['exec'];
+  if (prepared.modelHint) {
+    args.push('--model', prepared.modelHint);
+  }
+  return args;
 }

@@ -78,6 +78,31 @@ The canonical skill contains one concise `SKILL.md`, optional deterministic scri
 
 Reason: the skill must not consume context with architecture and contributor material that is irrelevant during normal execution.
 
+
+## ADR-012: CAS-Based FileMutex
+
+Status: Accepted.
+
+Implement Compare-And-Swap file-based lock acquisition for multi-process worktree and projection isolation without requiring a background daemon.
+
+## ADR-013: Cycle Detection At Configuration Load Time
+
+Status: Accepted.
+
+Perform topological DAG cycle detection during initial WorkspacePlan load to fail invalid dependencies immediately before enqueuing work items.
+
+## ADR-014: Schema Migration Versioning and Projection Re-indexing
+
+Status: Accepted.
+
+Use monotonic integer versioning for event envelopes and projections. Re-index SQLite projections directly from canonical JSONL events on schema version mismatch.
+
+## ADR-015: Semantic Caching For AI Engine Requests
+
+Status: Accepted.
+
+Hash intent structures and prompts to cache deterministic LLM requests while automatically bypassing non-deterministic intents.
+
 ## Deferred Decisions
 
 - Exact YAML, JSON Schema, SQLite, glob, logging, and process libraries.

@@ -46,21 +46,21 @@ apps/
 
 packages/
   contracts/               -> shared types, event envelopes, config schema types
-  config/                  -> YAML loading, normalization, schema validation
-  core/                    -> run model, state machine, orchestration services
-  event-store/             -> append-only event log and checkpoint interfaces
-  projections/             -> materialized views for runs, leases, reports
+  config/                  -> YAML loading, normalization, cycle detection, schema validation
+  core/                    -> run model, state machine, orchestration services, semantic caching
+  event-store/             -> append-only event log, indexing, and migration interfaces
+  projections/             -> materialized views for runs, leases, reports, cost metrics
   scheduler/               -> DAG planning, fairness, lease orchestration
-  work-ownership/          -> path globs, lane ownership, lock evaluation
+  work-ownership/          -> path globs, lane ownership, lock evaluation, CAS filemutex
   git-backend/             -> repository, branch, merge-base, worktree services
   policy-engine/           -> rule evaluation, approval gates, action decisions
   validation-graph/        -> validators, dependencies, result aggregation
-  reporting/               -> summaries, artifacts, exports
-  adapter-ai/              -> AI provider implementations
+  reporting/               -> summaries, artifacts, cost dashboards, metrics
+  adapter-ai/              -> AI provider implementations, token usage tracking
   adapter-scm/             -> GitHub, GitLab, Azure Repos, local-only SCM adapters
   adapter-ci/              -> CI providers and local validation runners
   adapter-secrets/         -> env/file/keychain secret resolution
-  platform/                -> filesystem, clock, process, signal abstractions
+  platform/                -> filesystem, clock, process, CAS filemutex, signal abstractions
   test-kit/                -> fixtures, fakes, deterministic test harnesses
 ```
 
@@ -239,6 +239,17 @@ AI adapters MUST NOT:
 - emit terminal success/failure without deterministic confirmation
 
 Every AI-derived suggestion that affects execution MUST be persisted as a normalized proposal or decision event before use.
+
+### 5.12 Semantic Caching and Observability
+
+The semantic caching and observability context provides:
+
+- deterministic intent and prompt structure hashing
+- exact and similarity cache matching for LLM requests
+- non-deterministic intent bypass rules (e.g. ambient environment reads or live timestamps)
+- token usage accounting across prompt, completion, and cached tokens
+- cost aggregation and dashboard CLI reports (`report --cost`, `status --metrics`)
+- event store sequence integrity monitoring and schema migration versioning
 
 ## 6. Runtime Flow
 

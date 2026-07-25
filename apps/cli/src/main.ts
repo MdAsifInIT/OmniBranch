@@ -26,6 +26,7 @@ import {
   loadWorkspacePlan,
   LocalCampaignService,
   RepositoryDiscovery,
+  JsonlEventStore,
 } from '@omnibranch/runtime';
 
 import { DEFAULT_CONFIG } from './index.js';
@@ -385,6 +386,17 @@ cli
     });
   });
 
+
+cli
+  .command('cost')
+  .description('Display aggregated token usage and cost metrics per task and campaign.')
+  .option('--run-id <id>', 'run id or campaign id')
+  .action(async (options: { readonly runId?: string }) => {
+    await execute('cost', async () => ({
+      data: await (await service()).cost(options.runId),
+    }));
+  });
+
 cli
   .command('report')
   .requiredOption('--campaign <id>', 'campaign id')
@@ -496,6 +508,24 @@ cli
     await execute('snapshot', async () => ({
       data: await (await service()).snapshot(options.campaign),
     }));
+  });
+
+
+const audit = cli.command('audit').description('Audit and integrity verification operations.');
+
+audit
+  .command('verify')
+  .option('--secret <secret>', 'HMAC secret for event chain verification')
+  .description('Verify HMAC chain integrity of the event log store.')
+  .action(async (options: { readonly secret?: string }) => {
+    await execute('audit.verify', async () => {
+      const runner = new ExecaProcessRunner();
+      const facts = await discover(runner);
+      const stateRoot = path.join(facts.commonGitDirectory, 'omnibranch');
+      const eventsStore = new JsonlEventStore(path.join(stateRoot, 'events.jsonl'));
+      const result = await eventsStore.verifyHmacChain(options.secret);
+      return { data: result };
+    });
   });
 
 class ConfigValidationError extends Error {
@@ -656,7 +686,7 @@ async function execute(
       },
       globals.json ?? false,
     );
-    process.exitCode = 1;
+    process.exitCode = error instanceof ConfigValidationError ? 2 : 1;
   }
 }
 

@@ -1,3 +1,9 @@
+export interface TokenUsage {
+  readonly inputTokens?: number;
+  readonly outputTokens?: number;
+  readonly estimatedCostUsd?: number;
+}
+
 export type Brand<T, B extends string> = T & { readonly __brand: B };
 
 export type CampaignId = Brand<string, 'CampaignId'>;
@@ -70,6 +76,24 @@ export interface LeaseConfig {
   readonly gracePeriod: string;
 }
 
+export interface SemanticCacheConfig {
+  readonly enabled: boolean;
+  readonly ttlSeconds?: number;
+}
+
+export interface TokenBudget {
+  readonly maxInputTokens?: number;
+  readonly maxOutputTokens?: number;
+  readonly maxCostUsd?: number;
+  readonly warnAtPercent?: number;
+}
+
+export interface TokenUsage {
+  readonly inputTokens?: number;
+  readonly outputTokens?: number;
+  readonly estimatedCostUsd?: number;
+}
+
 export interface RuntimeConfig {
   readonly nodeVersion: string;
   readonly workspaceRoot: string;
@@ -80,6 +104,8 @@ export interface RuntimeConfig {
   readonly globalConcurrency: number;
   readonly reconciliationInterval: string;
   readonly lease: LeaseConfig;
+  readonly semanticCache?: SemanticCacheConfig;
+  readonly tokenBudget?: TokenBudget;
 }
 
 export interface BranchConfig {
@@ -189,6 +215,7 @@ export interface EventEnvelope<TType extends string = string, TPayload = unknown
   readonly correlationId: string;
   readonly causationId?: EventId;
   readonly payload: TPayload;
+  readonly hmac?: string;
 }
 
 export interface OwnershipScope {
@@ -202,6 +229,17 @@ export interface RetryPolicy {
   readonly backoffMs: number;
   readonly multiplier: number;
   readonly jitterSeed?: string;
+}
+
+export interface ModelProfile {
+  readonly id: string;
+  readonly name?: string;
+  readonly adapterId?: AdapterId | string;
+  readonly lane?: string;
+  readonly cost: number;
+  readonly contextWindow: number;
+  readonly capabilities: readonly string[];
+  readonly latency?: number;
 }
 
 export interface WorkItem {
@@ -219,6 +257,7 @@ export interface WorkItem {
   readonly lane: string;
   readonly priority: number;
   readonly adapterId?: AdapterId;
+  readonly modelHint?: string;
 }
 
 export interface WorkItemProjection {
@@ -228,6 +267,8 @@ export interface WorkItemProjection {
   readonly nextEligibleAt?: string;
   readonly leaseId?: LeaseId;
   readonly failure?: NormalizedError;
+  readonly tokenUsage?: TokenUsage;
+  readonly modelHint?: string;
 }
 
 export interface Lease {
@@ -342,6 +383,7 @@ export interface AssignmentEnvelope {
   readonly validation: readonly string[];
   readonly escalation: readonly string[];
   readonly lease: Lease;
+  readonly modelHint?: string;
 }
 
 export interface AdapterResult {
@@ -369,6 +411,8 @@ export interface AdapterResult {
     readonly endedAt: string;
     readonly durationMs: number;
   };
+  readonly metadata?: Readonly<Record<string, unknown>>;
+  readonly tokenUsage?: TokenUsage;
 }
 
 export interface NormalizedError {
@@ -406,6 +450,18 @@ export interface ProjectionStore {
   apply(events: readonly EventEnvelope[]): Promise<void>;
   checkpoint(): Promise<number>;
   getWorkItems(runId: RunId): Promise<readonly WorkItemProjection[]>;
+  getCosts(runId?: RunId): Promise<{
+    readonly totalInputTokens: number;
+    readonly totalOutputTokens: number;
+    readonly totalCostUsd: number;
+    readonly items: readonly {
+      readonly workItemId: string;
+      readonly runId: string;
+      readonly inputTokens: number;
+      readonly outputTokens: number;
+      readonly estimatedCostUsd: number;
+    }[];
+  }>;
 }
 
 export interface GitBackend {
@@ -483,6 +539,7 @@ export interface SchedulerInput {
   readonly adapterCapacity: Readonly<Record<string, number>>;
   readonly activeByLane: Readonly<Record<string, number>>;
   readonly activeByAdapter: Readonly<Record<string, number>>;
+  readonly availableModels?: Readonly<Record<string, readonly ModelProfile[]>> | readonly ModelProfile[];
 }
 
 export interface PolicyEngine {
@@ -525,6 +582,7 @@ export interface PreparedAssignment {
   readonly prompt: string;
   readonly assignment: AssignmentEnvelope;
   readonly guided: boolean;
+  readonly modelHint?: string;
 }
 
 export interface AdapterRunHandle {

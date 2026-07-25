@@ -145,6 +145,23 @@ Exit criteria:
 - install, initialize, run, resume, and uninstall paths are verified;
 - public support and security-reporting channels exist.
 
+### Milestone H: `0.3.0` Advanced Resiliency, Observability & Performance
+
+Deliverables:
+
+- Phase 1: Robust CAS-Based FileMutex process locking for cross-process synchronization and cycle detection at configuration load time.
+- Phase 2: Schema migration versioning, automatic SQLite projection re-indexing, and backward-compatible event store schema migrations.
+- Phase 3: Token usage accounting, cost dashboard CLI commands (`report --cost`, `status --metrics`), and event store health metrics.
+- Phase 4: Semantic prompt caching engine with similarity hashing, TTL invalidation, non-deterministic intent bypass rules, and hit rate reporting.
+- Phase 5: Comprehensive observability documentation (`OBSERVABILITY.md`), new ADRs (0012-0015), updated `LIMITATIONS.md`, architecture documentation updates, and backlog/roadmap synchronization.
+
+Exit criteria:
+
+- `pnpm docs:check` and all validation/quality checks pass cleanly.
+- SQLite projections rebuild deterministically from canonical JSONL events on schema version mismatch.
+- Non-deterministic intents reliably bypass semantic caching.
+- Cost reporting accurately reflects token usage and budget thresholds.
+
 ## 4. Post-0.1 Roadmap
 
 ### `0.2`: Additional SCM Providers

@@ -113,6 +113,39 @@ describe('deterministic scheduler', () => {
       }),
     ).toEqual([dependent]);
   });
+
+  it('selects ready work items with cost-aware model routing hints', () => {
+    const projection = item('task-1', [], 10);
+    const scheduler = new DeterministicScheduler();
+    const result = scheduler.selectReady({
+      items: [projection],
+      now: '2026-07-12T00:00:00.000Z',
+      globalCapacity: 2,
+      lanePriority: { routine: 100 },
+      laneCapacity: { routine: 2 },
+      adapterCapacity: {},
+      activeByLane: {},
+      activeByAdapter: {},
+      availableModels: [
+        {
+          id: 'costly-model',
+          cost: 20,
+          contextWindow: 100000,
+          capabilities: ['code'],
+        },
+        {
+          id: 'cheap-model',
+          cost: 2,
+          contextWindow: 100000,
+          capabilities: ['code'],
+        },
+      ],
+    });
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.modelHint).toBe('cheap-model');
+    expect(result[0]?.item.modelHint).toBe('cheap-model');
+  });
 });
 
 describe('ownership and leases', () => {
