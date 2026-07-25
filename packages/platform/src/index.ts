@@ -364,7 +364,7 @@ export class FileMutex {
           }
         }
         
-        if (Date.now() - started > this.timeoutMs) {
+        if (Date.now() - started > this.staleAfterMs * 2) {
           throw new Error(`Resource is locked and not stale: ${this.lockPath}`);
         }
         await new Promise((resolve) => setTimeout(resolve, 100 + Math.random() * 100));
