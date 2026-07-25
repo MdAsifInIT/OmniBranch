@@ -22,6 +22,7 @@ import type {
   WorkItemStatus,
   WorktreeMutation,
   WorktreeRemoval,
+  AdapterStatus,
 } from '@omnibranch/contracts';
 import {
   canonicalPathInside,
@@ -484,7 +485,7 @@ export class SqliteProjectionStore implements ProjectionStore {
           cache_key: string;
           work_item_id: string;
           adapter_id: string;
-          status: import('@omnibranch/contracts').AdapterStatus;
+          status: AdapterStatus;
           summary: string;
           artifacts_json: string;
           change_claims_json: string;
