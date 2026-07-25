@@ -386,7 +386,6 @@ cli
     });
   });
 
-
 cli
   .command('cost')
   .description('Display aggregated token usage and cost metrics per task and campaign.')
@@ -509,7 +508,6 @@ cli
       data: await (await service()).snapshot(options.campaign),
     }));
   });
-
 
 const audit = cli.command('audit').description('Audit and integrity verification operations.');
 

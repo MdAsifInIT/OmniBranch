@@ -124,7 +124,9 @@ export class JsonlEventStore implements EventStore {
     }
   }
 
-  async verifyHmacChain(providedSecret?: string): Promise<{ readonly valid: boolean; readonly errors: readonly string[] }> {
+  async verifyHmacChain(
+    providedSecret?: string,
+  ): Promise<{ readonly valid: boolean; readonly errors: readonly string[] }> {
     const secret = providedSecret ?? process.env.OMNIBRANCH_AUDIT_SECRET;
     if (!secret) return { valid: true, errors: [] };
     const events = await this.load();
@@ -141,7 +143,13 @@ export class JsonlEventStore implements EventStore {
         .update(prevHmac + ':' + JSON.stringify(rest))
         .digest('hex');
       if (event.hmac !== expectedHmac) {
-        errors.push('HMAC mismatch at global sequence ' + event.globalSequence + ' (event ID ' + event.eventId + ').');
+        errors.push(
+          'HMAC mismatch at global sequence ' +
+            event.globalSequence +
+            ' (event ID ' +
+            event.eventId +
+            ').',
+        );
       }
       prevHmac = event.hmac;
     }
@@ -231,7 +239,7 @@ export class JsonlEventStore implements EventStore {
 
     const source = buffer.toString('utf8');
     const lines = source.split(/\r?\n/);
-    
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]?.trim();
       if (!line) continue;
@@ -247,24 +255,25 @@ export class JsonlEventStore implements EventStore {
         this.cachedEvents.push(parsed as EventEnvelope);
       } catch (error) {
         if (error instanceof EventStoreError) throw error;
-        
-        const isLastNonEmpty = lines.slice(i + 1).every(l => l.trim().length === 0);
+
+        const isLastNonEmpty = lines.slice(i + 1).every((l) => l.trim().length === 0);
         if (isLastNonEmpty) {
           const backupPath = this.filePath + `.corrupt.${Date.now()}`;
           await copyFile(this.filePath, backupPath);
-          await writeFile(this.filePath, this.cachedEvents.map(e => JSON.stringify(e)).join('\n') + '\n');
-          console.warn(`[EventStore] Recovered from truncated line. Original file backed up to ${backupPath}`);
+          await writeFile(
+            this.filePath,
+            this.cachedEvents.map((e) => JSON.stringify(e)).join('\n') + '\n',
+          );
+          console.warn(
+            `[EventStore] Recovered from truncated line. Original file backed up to ${backupPath}`,
+          );
           break; // Stop parsing as we have recovered
         } else {
-          throw new EventStoreError(
-            'CORRUPT_EVENT_LINE',
-            `Invalid JSON at line ${i + 1}.`,
-            error,
-          );
+          throw new EventStoreError('CORRUPT_EVENT_LINE', `Invalid JSON at line ${i + 1}.`, error);
         }
       }
     }
-    
+
     // Update offset to the new file size (or the size after recovery)
     const newStat = await stat(this.filePath);
     this.byteOffset = newStat.size;
@@ -363,9 +372,9 @@ export class SqliteProjectionStore implements ProjectionStore {
       );
     `);
 
-    const appliedRows = this.database
-      .prepare('SELECT version FROM schema_migrations')
-      .all() as { version: number }[];
+    const appliedRows = this.database.prepare('SELECT version FROM schema_migrations').all() as {
+      version: number;
+    }[];
     const appliedVersions = new Set(appliedRows.map((row) => row.version));
 
     const unapplied = PROJECTION_SCHEMA_MIGRATIONS.filter(
@@ -379,19 +388,19 @@ export class SqliteProjectionStore implements ProjectionStore {
       this.database.transaction(() => {
         for (const migration of unapplied) {
           this.database!.exec(migration.sql);
-          recordMigration.run(
-            migration.version,
-            new Date().toISOString(),
-            migration.description,
-          );
+          recordMigration.run(migration.version, new Date().toISOString(), migration.description);
         }
       })();
     }
   }
 
-  async getAppliedMigrations(): Promise<readonly { version: number; appliedAt: string; description: string }[]> {
+  async getAppliedMigrations(): Promise<
+    readonly { version: number; appliedAt: string; description: string }[]
+  > {
     const rows = this.requireDatabase()
-      .prepare('SELECT version, applied_at, description FROM schema_migrations ORDER BY version ASC')
+      .prepare(
+        'SELECT version, applied_at, description FROM schema_migrations ORDER BY version ASC',
+      )
       .all() as { version: number; applied_at: string; description: string }[];
     return rows.map((row) => ({
       version: row.version,
@@ -467,7 +476,9 @@ export class SqliteProjectionStore implements ProjectionStore {
   }
 
   async getSemanticCacheEntry(cacheKey: string): Promise<SemanticCacheEntry | null> {
-    const row = this.requireDatabase().prepare("SELECT * FROM semantic_cache WHERE cache_key = ?").get(cacheKey) as any;
+    const row = this.requireDatabase()
+      .prepare('SELECT * FROM semantic_cache WHERE cache_key = ?')
+      .get(cacheKey) as any;
     if (!row) return null;
     return {
       cacheKey: row.cache_key,
@@ -484,13 +495,27 @@ export class SqliteProjectionStore implements ProjectionStore {
   }
 
   async saveSemanticCacheEntry(entry: SemanticCacheEntry): Promise<void> {
-    this.requireDatabase().prepare("INSERT INTO semantic_cache (cache_key, work_item_id, adapter_id, status, summary, artifacts_json, change_claims_json, diff_patch, created_at, ttl_seconds) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(cache_key) DO UPDATE SET work_item_id=excluded.work_item_id, adapter_id=excluded.adapter_id, status=excluded.status, summary=excluded.summary, artifacts_json=excluded.artifacts_json, change_claims_json=excluded.change_claims_json, diff_patch=excluded.diff_patch, created_at=excluded.created_at, ttl_seconds=excluded.ttl_seconds").run(entry.cacheKey, entry.workItemId, entry.adapterId, entry.status, entry.summary, JSON.stringify(entry.artifacts), JSON.stringify(entry.changeClaims), entry.diffPatch, entry.createdAt, entry.ttlSeconds);
+    this.requireDatabase()
+      .prepare(
+        'INSERT INTO semantic_cache (cache_key, work_item_id, adapter_id, status, summary, artifacts_json, change_claims_json, diff_patch, created_at, ttl_seconds) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(cache_key) DO UPDATE SET work_item_id=excluded.work_item_id, adapter_id=excluded.adapter_id, status=excluded.status, summary=excluded.summary, artifacts_json=excluded.artifacts_json, change_claims_json=excluded.change_claims_json, diff_patch=excluded.diff_patch, created_at=excluded.created_at, ttl_seconds=excluded.ttl_seconds',
+      )
+      .run(
+        entry.cacheKey,
+        entry.workItemId,
+        entry.adapterId,
+        entry.status,
+        entry.summary,
+        JSON.stringify(entry.artifacts),
+        JSON.stringify(entry.changeClaims),
+        entry.diffPatch,
+        entry.createdAt,
+        entry.ttlSeconds,
+      );
   }
 
   async deleteSemanticCacheEntry(cacheKey: string): Promise<void> {
-    this.requireDatabase().prepare("DELETE FROM semantic_cache WHERE cache_key = ?").run(cacheKey);
+    this.requireDatabase().prepare('DELETE FROM semantic_cache WHERE cache_key = ?').run(cacheKey);
   }
-
 
   async getWorkItems(runId: RunId): Promise<readonly WorkItemProjection[]> {
     const rows = this.requireDatabase()
@@ -519,11 +544,13 @@ export class SqliteProjectionStore implements ProjectionStore {
         : { failure: JSON.parse(row.failure_json) as NonNullable<WorkItemProjection['failure']> }),
       ...(row.token_usage === null || row.token_usage === undefined
         ? {}
-        : { tokenUsage: JSON.parse(row.token_usage) as NonNullable<WorkItemProjection['tokenUsage']> }),
+        : {
+            tokenUsage: JSON.parse(row.token_usage) as NonNullable<
+              WorkItemProjection['tokenUsage']
+            >,
+          }),
     }));
   }
-
-  
 
   async getCosts(runId?: RunId): Promise<{
     readonly totalInputTokens: number;
@@ -549,9 +576,7 @@ export class SqliteProjectionStore implements ProjectionStore {
           token_usage: string | null;
           cost_usd: number;
         }[])
-      : (db
-          .prepare('SELECT work_item_id, run_id, token_usage, cost_usd FROM work_items')
-          .all() as {
+      : (db.prepare('SELECT work_item_id, run_id, token_usage, cost_usd FROM work_items').all() as {
           work_item_id: string;
           run_id: string;
           token_usage: string | null;

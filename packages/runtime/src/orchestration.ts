@@ -87,10 +87,10 @@ export function validateDag(nodes: readonly DagNode[]): {
   if (byId.size !== nodes.length) {
     throw new InvariantViolation('DUPLICATE_WORK_ITEM', 'Work item ids must be unique.');
   }
-  
+
   const adjacency = new Map<WorkItemId, WorkItemId[]>();
   const inDegree = new Map<WorkItemId, number>();
-  
+
   for (const id of byId.keys()) {
     adjacency.set(id, []);
     inDegree.set(id, 0);
@@ -126,7 +126,7 @@ export function validateDag(nodes: readonly DagNode[]): {
   queue.sort();
 
   const order: WorkItemId[] = [];
-  
+
   while (queue.length > 0) {
     const current = queue.shift()!;
     order.push(current);
@@ -138,12 +138,12 @@ export function validateDag(nodes: readonly DagNode[]): {
     for (const neighbor of neighbors) {
       const newDeg = inDegree.get(neighbor)! - 1;
       inDegree.set(neighbor, newDeg);
-      
+
       const neighborDepth = depth.get(neighbor) ?? 0;
       if (currentDepth + 1 > neighborDepth) {
         depth.set(neighbor, currentDepth + 1);
       }
-      
+
       if (newDeg === 0) {
         queue.push(neighbor);
       }
@@ -259,7 +259,8 @@ function resolveModelForCandidate(
   if (Array.isArray(modelsInput)) {
     const laneFiltered = modelsInput.filter((m) => {
       if (m.lane && m.lane !== candidate.item.lane) return false;
-      if (m.adapterId && candidate.item.adapterId && m.adapterId !== candidate.item.adapterId) return false;
+      if (m.adapterId && candidate.item.adapterId && m.adapterId !== candidate.item.adapterId)
+        return false;
       return true;
     });
     modelPool = laneFiltered.length > 0 ? laneFiltered : modelsInput;
@@ -274,7 +275,6 @@ function resolveModelForCandidate(
   if (modelPool.length === 0) return undefined;
   return selectModel(candidate.item, modelPool);
 }
-
 
 export function normalizeOwnership(scope: OwnershipScope): OwnershipScope {
   return {
@@ -582,7 +582,9 @@ const BLOCKED_ENV_OVERRIDES = new Set([
   'DYLD_INSERT_LIBRARIES',
 ]);
 
-export function buildValidationEnv(commandEnv?: Readonly<Record<string, string>>): Record<string, string> {
+export function buildValidationEnv(
+  commandEnv?: Readonly<Record<string, string>>,
+): Record<string, string> {
   const env: Record<string, string> = {};
   for (const [key, value] of Object.entries(process.env)) {
     if (value !== undefined && !STRIPPED_ENV_VARS.has(key)) {
@@ -592,7 +594,9 @@ export function buildValidationEnv(commandEnv?: Readonly<Record<string, string>>
   if (commandEnv) {
     for (const [key, value] of Object.entries(commandEnv)) {
       if (BLOCKED_ENV_OVERRIDES.has(key.toUpperCase())) {
-        throw new Error(`Validation command attempted to override blocked environment variable: ${key}`);
+        throw new Error(
+          `Validation command attempted to override blocked environment variable: ${key}`,
+        );
       }
       env[key] = value;
     }

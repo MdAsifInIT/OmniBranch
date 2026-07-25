@@ -46,7 +46,7 @@ import {
   FileMutex,
 } from '@omnibranch/platform';
 
-import { SemanticCacheManager } from "./semantic-cache.js";
+import { SemanticCacheManager } from './semantic-cache.js';
 import { LeaseManager } from './orchestration.js';
 import {
   JsonlEventStore,
@@ -65,11 +65,15 @@ export interface CampaignStatus {
 export class TokenBudgetExceededError extends Error {
   public constructor(
     message: string,
-    readonly usage: { totalInputTokens: number; totalOutputTokens: number; estimatedCostUsd: number },
+    readonly usage: {
+      totalInputTokens: number;
+      totalOutputTokens: number;
+      estimatedCostUsd: number;
+    },
     readonly budget: any,
   ) {
     super(message);
-    this.name = "TokenBudgetExceededError";
+    this.name = 'TokenBudgetExceededError';
   }
 }
 
@@ -86,7 +90,10 @@ export class LocalCampaignService {
   ) {
     this.git = new NativeGitBackend(runner);
     this.leases = new LeaseManager(clock, idGenerator);
-    this.docsMutex = new FileMutex(path.join(this.repositoryRoot, '.omnibranch', 'docs.lock'), 10_000);
+    this.docsMutex = new FileMutex(
+      path.join(this.repositoryRoot, '.omnibranch', 'docs.lock'),
+      10_000,
+    );
   }
 
   async create(name: string): Promise<{ readonly campaignId: CampaignId; readonly runId: RunId }> {
@@ -160,19 +167,20 @@ export class LocalCampaignService {
         await this.planFixture(campaignId);
         return this.runFixture(campaignId, adapter, options);
       }
-      const pending = workItems.filter((projection) => projection.status !== "succeeded");
+      const pending = workItems.filter((projection) => projection.status !== 'succeeded');
       if (pending.length === 0) return [];
 
       let totalInputTokens = 0;
       let totalOutputTokens = 0;
       let estimatedCostUsd = 0;
       for await (const ev of events.readAll()) {
-        if (ev.type === "adapter.completed" && ev.payload) {
+        if (ev.type === 'adapter.completed' && ev.payload) {
           const payload = ev.payload as any;
           if (payload.tokenUsage) {
             totalInputTokens += payload.tokenUsage.inputTokens ?? 0;
             totalOutputTokens += payload.tokenUsage.outputTokens ?? 0;
-            estimatedCostUsd += payload.tokenUsage.estimatedCostUsd ?? payload.tokenUsage.costUsd ?? 0;
+            estimatedCostUsd +=
+              payload.tokenUsage.estimatedCostUsd ?? payload.tokenUsage.costUsd ?? 0;
           }
         }
       }
@@ -180,19 +188,39 @@ export class LocalCampaignService {
       if (budget) {
         const usage = { totalInputTokens, totalOutputTokens, estimatedCostUsd };
         if (budget.maxInputTokens !== undefined && totalInputTokens > budget.maxInputTokens) {
-          throw new TokenBudgetExceededError("Input token budget exceeded (" + totalInputTokens + " > " + budget.maxInputTokens + ")", usage, budget);
+          throw new TokenBudgetExceededError(
+            'Input token budget exceeded (' +
+              totalInputTokens +
+              ' > ' +
+              budget.maxInputTokens +
+              ')',
+            usage,
+            budget,
+          );
         }
         if (budget.maxOutputTokens !== undefined && totalOutputTokens > budget.maxOutputTokens) {
-          throw new TokenBudgetExceededError("Output token budget exceeded (" + totalOutputTokens + " > " + budget.maxOutputTokens + ")", usage, budget);
+          throw new TokenBudgetExceededError(
+            'Output token budget exceeded (' +
+              totalOutputTokens +
+              ' > ' +
+              budget.maxOutputTokens +
+              ')',
+            usage,
+            budget,
+          );
         }
         if (budget.maxCostUsd !== undefined && estimatedCostUsd > budget.maxCostUsd) {
-          throw new TokenBudgetExceededError("Cost budget exceeded ($" + estimatedCostUsd + " > $" + budget.maxCostUsd + ")", usage, budget);
+          throw new TokenBudgetExceededError(
+            'Cost budget exceeded ($' + estimatedCostUsd + ' > $' + budget.maxCostUsd + ')',
+            usage,
+            budget,
+          );
         }
       }
 
       const facts = await this.git.discover(this.repositoryRoot);
-      if (facts.head === null) throw new Error("Campaign repository has no HEAD.");
-      const worktreeRoot = path.join(path.dirname(facts.root), ".omnibranch-worktrees", campaignId);
+      if (facts.head === null) throw new Error('Campaign repository has no HEAD.');
+      const worktreeRoot = path.join(path.dirname(facts.root), '.omnibranch-worktrees', campaignId);
       await mkdir(worktreeRoot, { recursive: true });
 
       const cacheManager = new SemanticCacheManager(projections, this.runner);
@@ -204,19 +232,19 @@ export class LocalCampaignService {
         readonly branch: string;
         readonly leaseId: LeaseId;
         readonly workerId: WorkerId;
-        readonly handle?: Awaited<ReturnType<AiEngineAdapter["launch"]>>;
+        readonly handle?: Awaited<ReturnType<AiEngineAdapter['launch']>>;
         readonly cachedResult?: AdapterResult;
         readonly cacheKey: string;
       }>[] = [];
 
       for (const projection of pending) {
-        const suffix = projection.item.workItemId.replace(/^work-/, "");
-        const branch = "omnibranch/work/" + campaignId + "/" + suffix;
+        const suffix = projection.item.workItemId.replace(/^work-/, '');
+        const branch = 'omnibranch/work/' + campaignId + '/' + suffix;
         const worktreePath = path.join(worktreeRoot, suffix);
         await this.git.createBranch({
           repositoryRoot: facts.root,
           branch,
-          startPoint: "HEAD",
+          startPoint: 'HEAD',
           expectedStartOid: facts.head,
           dryRun: false,
         });
@@ -227,7 +255,7 @@ export class LocalCampaignService {
           expectedBranchOid: facts.head,
           dryRun: false,
         });
-        const workerId = "mock-" + suffix as WorkerId;
+        const workerId = ('mock-' + suffix) as WorkerId;
         const lease = this.leases.acquire({
           workItemId: projection.item.workItemId,
           workerId,
@@ -236,24 +264,24 @@ export class LocalCampaignService {
           ttlMs: 60_000,
           heartbeatMs: 30_000,
         });
-        const outputPath = String(projection.item.expectedOutput["path"]);
-        const contents = String(projection.item.expectedOutput["contents"]);
+        const outputPath = String(projection.item.expectedOutput['path']);
+        const contents = String(projection.item.expectedOutput['contents']);
 
         const assignment: AssignmentEnvelope = {
-          assignmentId: "assignment-" + projection.item.workItemId,
+          assignmentId: 'assignment-' + projection.item.workItemId,
           runId,
           workItemId: projection.item.workItemId,
           objective: projection.item.summary,
           scope: {
             allowedPaths: [outputPath],
-            forbiddenPaths: [".git/**", ".omnibranch/**"],
+            forbiddenPaths: ['.git/**', '.omnibranch/**'],
             repositoryRoot: worktreePath,
             writeAllowed: true,
           },
-          constraints: ["Do not mutate Git metadata or files outside the assigned output."],
-          context: { mode: "complete", outputPath, contents },
-          validation: ["Output " + outputPath + " must exactly match the assigned content."],
-          escalation: ["Return blocked instead of widening scope."],
+          constraints: ['Do not mutate Git metadata or files outside the assigned output.'],
+          context: { mode: 'complete', outputPath, contents },
+          validation: ['Output ' + outputPath + ' must exactly match the assigned content.'],
+          escalation: ['Return blocked instead of widening scope.'],
           lease,
         };
 
@@ -272,9 +300,9 @@ export class LocalCampaignService {
                   const cachedResult: AdapterResult = {
                     runId,
                     adapterId,
-                    engineFamily: "mock",
-                    engineSurface: "mock",
-                    engineVersion: "1.0.0",
+                    engineFamily: 'mock',
+                    engineSurface: 'mock',
+                    engineVersion: '1.0.0',
                     status: cachedEntry.status,
                     summary: cachedEntry.summary,
                     assignmentEcho: {
@@ -327,7 +355,10 @@ export class LocalCampaignService {
           result = entry.cachedResult;
         } else if (entry.handle) {
           result = await adapter.collect(entry.handle);
-          if (isCacheEnabled && (result.status === "completed" || (result.status as string) === "succeeded")) {
+          if (
+            isCacheEnabled &&
+            (result.status === 'completed' || (result.status as string) === 'succeeded')
+          ) {
             const diffPatch = await cacheManager.captureDiff(entry.worktreePath);
             await projections.saveSemanticCacheEntry({
               cacheKey: entry.cacheKey,
@@ -343,7 +374,7 @@ export class LocalCampaignService {
             });
           }
         } else {
-          throw new Error("Invalid launch state");
+          throw new Error('Invalid launch state');
         }
         results.push(result);
 
@@ -423,7 +454,6 @@ export class LocalCampaignService {
     }
   }
 
-
   async cost(runId?: string): Promise<{
     readonly totalInputTokens: number;
     readonly totalOutputTokens: number;
@@ -498,7 +528,11 @@ export class LocalCampaignService {
       await atomicWrite(markdown, lines.join('\n'));
 
       // Auto-append task history
-      const historyService = new TaskHistoryService(this.repositoryRoot, this.docsMutex, this.clock);
+      const historyService = new TaskHistoryService(
+        this.repositoryRoot,
+        this.docsMutex,
+        this.clock,
+      );
       const branches = status.workItems.map(
         (wi) => `omnibranch/work/${campaignId}/${wi.item.workItemId.replace(/^work-/, '')}`,
       );
@@ -525,12 +559,20 @@ export class LocalCampaignService {
   // ─── Documentation ───
 
   async generateDocs(): Promise<ProjectDocumentResult> {
-    const docService = new ProjectDocumentationService(this.repositoryRoot, this.docsMutex, this.clock);
+    const docService = new ProjectDocumentationService(
+      this.repositoryRoot,
+      this.docsMutex,
+      this.clock,
+    );
     return docService.generate();
   }
 
   async updateDocs(campaignId: string): Promise<ProjectDocumentResult> {
-    const docService = new ProjectDocumentationService(this.repositoryRoot, this.docsMutex, this.clock);
+    const docService = new ProjectDocumentationService(
+      this.repositoryRoot,
+      this.docsMutex,
+      this.clock,
+    );
     const campaignStatus = await this.status(campaignId);
     const summary = campaignStatus.workItems
       .map((wi) => `${wi.item.workItemId}: ${wi.status}`)
@@ -570,7 +612,12 @@ export class LocalCampaignService {
   // ─── Merge Guide ───
 
   async generateMergeGuide(campaignId: string): Promise<MergeGuide> {
-    const mergeService = new MergeGuideService(this.repositoryRoot, this.runner, this.docsMutex, this.clock);
+    const mergeService = new MergeGuideService(
+      this.repositoryRoot,
+      this.runner,
+      this.docsMutex,
+      this.clock,
+    );
     const campaignStatus = await this.status(campaignId);
     const allEvents: EventEnvelope[] = [];
     const { events } = await this.openState();
@@ -580,7 +627,12 @@ export class LocalCampaignService {
   }
 
   async validateMergeReadiness(campaignId: string): Promise<MergeReadinessResult> {
-    const mergeService = new MergeGuideService(this.repositoryRoot, this.runner, this.docsMutex, this.clock);
+    const mergeService = new MergeGuideService(
+      this.repositoryRoot,
+      this.runner,
+      this.docsMutex,
+      this.clock,
+    );
     const campaignStatus = await this.status(campaignId);
     const facts = await this.git.discover(this.repositoryRoot);
     return mergeService.validateReadiness(campaignId, campaignStatus.workItems, facts);
@@ -703,10 +755,18 @@ function validateAdapterCompletion(
 
 function extractTokenUsage(result: AdapterResult): TokenUsage | undefined {
   if (result.tokenUsage) return result.tokenUsage;
-  if (result.metadata && typeof result.metadata['tokenUsage'] === 'object' && result.metadata['tokenUsage'] !== null) {
+  if (
+    result.metadata &&
+    typeof result.metadata['tokenUsage'] === 'object' &&
+    result.metadata['tokenUsage'] !== null
+  ) {
     return result.metadata['tokenUsage'] as TokenUsage;
   }
-  if (result.metadata && typeof result.metadata['token_usage'] === 'object' && result.metadata['token_usage'] !== null) {
+  if (
+    result.metadata &&
+    typeof result.metadata['token_usage'] === 'object' &&
+    result.metadata['token_usage'] !== null
+  ) {
     return result.metadata['token_usage'] as TokenUsage;
   }
   return undefined;

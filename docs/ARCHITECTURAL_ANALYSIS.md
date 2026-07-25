@@ -1,8 +1,8 @@
 # OmniBranch v0.2.1 — Architectural Analysis Report
 
-> **Codebase:** [OmniBranch](file:///c:/Users/mdasifinit/Documents/Code/OmniBranch) v0.2.1  
+> **Codebase:** [OmniBranch](..) v0.2.1  
 > **Stack:** TypeScript 6.0 / Node.js 22+, pnpm monorepo, better-sqlite3 (WAL), execa (`shell: false`), pino, picomatch, ajv (Draft 2020-12), commander  
-> **Architecture:** Event-sourced, lease-based deterministic orchestration over Git worktrees with policy-gated execution  
+> **Architecture:** Event-sourced, lease-based deterministic orchestration over Git worktrees with policy-gated execution
 
 ---
 
@@ -54,6 +54,7 @@ graph TB
 ```
 
 **Key design strengths already present:**
+
 - **Event sourcing** with append-only JSONL ledger + SQLite projections for crash recovery via deterministic replay
 - **Lease-based concurrency** with TTL, heartbeat deadlines, and glob-based ownership locks
 - **`shell: false` everywhere** in `ExecaProcessRunner` — eliminates shell injection
@@ -75,25 +76,29 @@ graph TB
 ### 1.1 Concurrency & State Race Conditions
 
 #### EC-1: FileMutex TOCTOU on Stale Lock Recovery
-**Location:** [index.ts](file:///c:/Users/mdasifinit/Documents/Code/OmniBranch/packages/platform/src/index.ts) — `FileMutex.acquire()`  
+
+**Location:** [index.ts](..) — `FileMutex.acquire()`  
 **Trigger:** Two processes simultaneously detect a stale lock (mtime > `staleAfterMs`). Process A calls `unlinkSync`. Between A's unlink and A's next `openSync('wx')`, Process B also calls `unlinkSync` (succeeds since A already removed it) and then `openSync('wx')` — acquiring the lock. Process A's `openSync('wx')` then also succeeds (the lock was briefly absent), giving **both processes the lock simultaneously**.  
 **Impact:** Mutual exclusion violation. Two campaign runs could modify the same event store concurrently, corrupting the JSONL ledger. The window is microseconds wide but becomes material under high contention (CI environments with rapid campaign launches).  
 **Probability:** Low in single-user setups; non-trivial in CI/CD pipelines with parallel jobs.
 
 #### EC-2: JsonlEventStore Linear Scan Degradation
-**Location:** [persistence.ts](file:///c:/Users/mdasifinit/Documents/Code/OmniBranch/packages/runtime/src/persistence.ts) — `JsonlEventStore.readFrom()`  
+
+**Location:** [persistence.ts](..) — `JsonlEventStore.readFrom()`  
 **Trigger:** Campaign with 100+ tasks running 3+ retry attempts each, generating thousands of events.  
 **Behavior:** `readFrom(afterSequence)` reads and parses the **entire** `events.jsonl` file on every reconciliation loop iteration (default: every 30 seconds), filtering to events after the checkpoint. As the file grows, parse time increases linearly.  
 **Impact:** At ~10,000 events (each ~500 bytes = 5MB file), each reconciliation cycle spends 50-100ms parsing JSON. At 100,000 events, this becomes seconds per cycle. The reconciliation interval of 30s becomes the parse time, starving the scheduler.
 
 #### EC-3: Truncated JSONL Line on Crash
-**Location:** [persistence.ts](file:///c:/Users/mdasifinit/Documents/Code/OmniBranch/packages/runtime/src/persistence.ts) — `JsonlEventStore.readAll()`  
+
+**Location:** [persistence.ts](..) — `JsonlEventStore.readAll()`  
 **Trigger:** Process killed (`SIGKILL`, OOM killer) between `fs.appendFileSync` and `fs.fdatasyncSync`, or mid-write of a JSON line.  
 **Behavior:** The last line of `events.jsonl` is a partial JSON string. On restart, `JSON.parse` throws on that line. The entire `readAll()` call fails, preventing campaign recovery.  
 **Impact:** Campaign becomes unrecoverable without manual file editing. All state since the last successful write is lost.
 
 #### EC-4: Documentation/History Read-Modify-Write Race
-**Location:** [task-history.ts](file:///c:/Users/mdasifinit/Documents/Code/OmniBranch/packages/runtime/src/task-history.ts), [documentation.ts](file:///c:/Users/mdasifinit/Documents/Code/OmniBranch/packages/runtime/src/documentation.ts)  
+
+**Location:** [task-history.ts](..), [documentation.ts](..)  
 **Trigger:** Two concurrent work items complete simultaneously, both calling `TaskHistoryService.append()`.  
 **Behavior:** Both read the same `HISTORY.md`, both append their entry, both call `atomicWrite`. The last rename wins — the first item's history entry is silently lost. While the primary state (event store + projections) is safe, the human-readable audit trail becomes incomplete.  
 **Impact:** Missing entries in Markdown-format history. No data loss in the authoritative event store, but operator confusion when reviewing task history.
@@ -103,25 +108,29 @@ graph TB
 ### 1.2 Scheduling & Orchestration Edge Cases
 
 #### EC-5: Dependency Cycle → Permanent Deadlock
-**Location:** [orchestration.ts](file:///c:/Users/mdasifinit/Documents/Code/OmniBranch/packages/runtime/src/orchestration.ts) — `DeterministicScheduler.selectReady()`  
-**Trigger:** Plan with tasks A→B→A (circular dependency). Schema validation in [config.ts](file:///c:/Users/mdasifinit/Documents/Code/OmniBranch/packages/runtime/src/config.ts) checks that `dependsOn` references valid task IDs but does **not** detect cycles.  
+
+**Location:** [orchestration.ts](..) — `DeterministicScheduler.selectReady()`  
+**Trigger:** Plan with tasks A→B→A (circular dependency). Schema validation in [config.ts](..) checks that `dependsOn` references valid task IDs but does **not** detect cycles.  
 **Behavior:** The scheduler's `selectReady` checks if all dependencies have status `succeeded`. In a cycle, no task can become `ready` because each waits for the other. The campaign loop spins indefinitely, sleeping 30s per iteration, never completing.  
 **Impact:** Campaign hangs forever. No timeout on the campaign loop itself. Requires manual SIGINT.
 
 #### EC-6: Adapter Probe False Negative
-**Location:** [engines.ts](file:///c:/Users/mdasifinit/Documents/Code/OmniBranch/packages/adapters/src/engines.ts) — `probe()`  
+
+**Location:** [engines.ts](..) — `probe()`  
 **Trigger:** Engine CLI is installed but returns non-zero exit code from `--version` due to missing config file, expired token, or network check on startup.  
 **Behavior:** `probe()` reports `{ available: false }`. Preflight check fails with "Engine not available" even though the engine is installed and functional for actual work.  
 **Impact:** False failure; user must bypass preflight or debug a misleading error.
 
 #### EC-7: Ownership Glob Over-Matching
-**Location:** [orchestration.ts](file:///c:/Users/mdasifinit/Documents/Code/OmniBranch/packages/runtime/src/orchestration.ts) — `LeaseManager.acquire()`  
+
+**Location:** [orchestration.ts](..) — `LeaseManager.acquire()`  
 **Trigger:** Two tasks with ownership paths `src/**` and `src/utils/helper.ts`. The first task acquires a lease on `src/**`. The second task's `src/utils/helper.ts` overlaps with `src/**` via picomatch glob matching.  
 **Behavior:** The second task cannot acquire a lease, even if it only modifies `helper.ts` and the first task never touches that file. The glob comparison is purely syntactic — it doesn't consider actual file changes.  
 **Impact:** False serialization; parallel tasks that could safely run concurrently are forced to run sequentially. Throughput degradation proportional to overly broad ownership declarations.
 
 #### EC-8: Lease Heartbeat Drift from Clock Skew
-**Location:** [orchestration.ts](file:///c:/Users/mdasifinit/Documents/Code/OmniBranch/packages/runtime/src/orchestration.ts) — `LeaseManager.renew()`  
+
+**Location:** [orchestration.ts](..) — `LeaseManager.renew()`  
 **Trigger:** `SystemClock.now()` uses `Date.now()`, which can jump forward or backward due to NTP synchronization, DST changes, or system sleep/resume.  
 **Behavior:** A forward clock jump during sleep could expire all active leases instantly on resume. A backward jump could make leases appear perpetually valid.  
 **Impact:** Forward jump: all running tasks are treated as expired, triggering unnecessary requeuing and retry. Backward jump: stale leases are never reclaimed, blocking new work.
@@ -131,32 +140,38 @@ graph TB
 ### 1.3 Input & Configuration Edge Cases
 
 #### EC-9: Policy Rule Shallow Matching Limitations
-**Location:** [orchestration.ts](file:///c:/Users/mdasifinit/Documents/Code/OmniBranch/packages/runtime/src/orchestration.ts) — `DeterministicPolicyEngine.evaluate()`  
+
+**Location:** [orchestration.ts](..) — `DeterministicPolicyEngine.evaluate()`  
 **Trigger:** Policy rule `{ action: 'write_repo', when: { path: 'src/config.ts' }, decision: 'deny' }`. Action requests include `{ class: 'write_repo', path: 'src/config.ts', content: '...' }`.  
 **Behavior:** The `when` matching does shallow equality on each key. It works for exact string matches but cannot express: "deny writes to any path matching `*.config.*`" or "allow git_read for all refs". Users must create one rule per specific case.  
 **Impact:** Policy configuration becomes verbose and fragile for broad rules. Users may misconfigure policies, leading to unexpected `require_approval` blocks.
 
 #### EC-10: Untyped Policy Conditions in Schema
-**Location:** [workspace-plan.schema.json](file:///c:/Users/mdasifinit/Documents/Code/OmniBranch/schemas/workspace-plan.schema.json) — `policies.rules[].when`  
+
+**Location:** [workspace-plan.schema.json](..) — `policies.rules[].when`  
 **Trigger:** User writes `when: { foo: [1, 2, "bar"] }` — an arbitrary object that passes schema validation.  
 **Behavior:** Schema defines `when` as `{ type: "object" }` with no property constraints. The policy engine attempts shallow equality matching against an array value, which always fails to match any action. The rule becomes a dead rule.  
 **Impact:** Silent misconfiguration. Security-critical deny rules may never activate.
 
 #### EC-11: Command Environment Override
-**Location:** [workspace-plan.schema.json](file:///c:/Users/mdasifinit/Documents/Code/OmniBranch/schemas/workspace-plan.schema.json) — `commands.*.env`  
+
+**Location:** [workspace-plan.schema.json](..) — `commands.*.env`  
 **Trigger:** Validation command configured with `env: { PATH: "/tmp/evil", LD_PRELOAD: "/tmp/libhook.so" }`.  
 **Behavior:** Schema allows unrestricted string properties in `env`. `ProcessRunner` merges these with `process.env`. Overriding `PATH` or `LD_PRELOAD` could redirect execution to malicious binaries.  
 **Impact:** Privilege escalation if the workspace plan is authored by an untrusted party.
 
 #### EC-12: YAML Alias Expansion Bomb
-**Location:** [config.ts](file:///c:/Users/mdasifinit/Documents/Code/OmniBranch/packages/runtime/src/config.ts) — `loadWorkspacePlan()`  
+
+**Location:** [config.ts](..) — `loadWorkspacePlan()`  
 **Trigger:** YAML with exponential anchor expansion:
+
 ```yaml
-a: &a ["x","x","x","x","x","x","x","x","x","x"]
-b: &b [*a,*a,*a,*a,*a,*a,*a,*a,*a,*a]
-c: &c [*b,*b,*b,*b,*b,*b,*b,*b,*b,*b]
-d: &d [*c,*c,*c,*c,*c,*c,*c,*c,*c,*c]
+a: &a ['x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x', 'x']
+b: &b [*a, *a, *a, *a, *a, *a, *a, *a, *a, *a]
+c: &c [*b, *b, *b, *b, *b, *b, *b, *b, *b, *b]
+d: &d [*c, *c, *c, *c, *c, *c, *c, *c, *c, *c]
 ```
+
 **Behavior:** The `yaml` library expands all aliases in memory. 4 levels of 10x expansion = 10,000 elements. 8 levels = 100 million. No `maxAliasCount` option is set.  
 **Impact:** OOM crash before schema validation runs.
 
@@ -207,14 +222,14 @@ sequenceDiagram
 
 ### FP-3: Dependency Cycle → Permanent Deadlock
 
-**Root cause:** Cycle detection is absent from `validateWorkspacePlan()` in [config.ts](file:///c:/Users/mdasifinit/Documents/Code/OmniBranch/packages/runtime/src/config.ts). The scheduler never selects items whose dependencies aren't all `succeeded`, and a cycle means no item can ever reach `succeeded`.  
+**Root cause:** Cycle detection is absent from `validateWorkspacePlan()` in [config.ts](..). The scheduler never selects items whose dependencies aren't all `succeeded`, and a cycle means no item can ever reach `succeeded`.  
 **Blast radius:** Campaign hangs indefinitely. The only recovery is manual process termination. No diagnostic message indicates a cycle.
 
 ---
 
 ### FP-4: GitHub 429 Rate Limit Without Retry
 
-**Affected file:** [github.ts](file:///c:/Users/mdasifinit/Documents/Code/OmniBranch/packages/adapters/src/github.ts)  
+**Affected file:** [github.ts](..)  
 **Root cause:** `normalizeGitHubError` maps HTTP 429 to error code `rate_limited` but the `GitHubScmAdapter` does not retry the request. The error propagates to the campaign service, which may treat it as a permanent failure.  
 **Blast radius:** PR creation or merge fails permanently due to a transient rate limit. The task is marked `failed` and consumed a retry attempt unnecessarily.
 
@@ -222,7 +237,7 @@ sequenceDiagram
 
 ### FP-5: Documentation History Clobber
 
-**Affected files:** [task-history.ts](file:///c:/Users/mdasifinit/Documents/Code/OmniBranch/packages/runtime/src/task-history.ts), [documentation.ts](file:///c:/Users/mdasifinit/Documents/Code/OmniBranch/packages/runtime/src/documentation.ts)  
+**Affected files:** [task-history.ts](..), [documentation.ts](..)  
 **Root cause:** These services perform read→transform→atomicWrite without holding the `FileMutex`. Two concurrent completions race.  
 **Blast radius:** Lost history entries. The authoritative event store is unaffected, but human-readable artifacts are incomplete.
 
@@ -230,7 +245,7 @@ sequenceDiagram
 
 ### FP-6: Unbounded `applied_events` Table Growth
 
-**Affected file:** [persistence.ts](file:///c:/Users/mdasifinit/Documents/Code/OmniBranch/packages/runtime/src/persistence.ts) — `SqliteProjectionStore`  
+**Affected file:** [persistence.ts](..) — `SqliteProjectionStore`  
 **Root cause:** Every applied event inserts a row into `applied_events` for idempotency checking. No compaction, archival, or pruning.  
 **Blast radius:** Over many campaigns on the same repository, the table grows to millions of rows. SQLite query performance for `WHERE sequence NOT IN (SELECT sequence FROM applied_events)` degrades significantly.
 
@@ -245,7 +260,7 @@ sequenceDiagram
 
 ### FP-8: Validation Command Side Effects
 
-**Affected file:** [campaign.ts](file:///c:/Users/mdasifinit/Documents/Code/OmniBranch/packages/runtime/src/campaign.ts) — validation execution  
+**Affected file:** [campaign.ts](..) — validation execution  
 **Root cause:** Validation commands run via `ProcessRunner` with `cwd` set to the worktree, but the commands can access the entire filesystem. The policy engine gates `execute_command` actions, but if the policy allows validation commands (which it typically must), those commands can write files outside the worktree, make network requests, or read sensitive environment variables.  
 **Blast radius:** Data exfiltration or filesystem corruption from malicious or buggy validation scripts.
 
@@ -262,7 +277,7 @@ sequenceDiagram
 
 interface EventStoreCheckpoint {
   lastSequence: number;
-  byteOffset: number;   // Byte position of last-read event's end
+  byteOffset: number; // Byte position of last-read event's end
 }
 
 class JsonlEventStore {
@@ -272,19 +287,24 @@ class JsonlEventStore {
     const fd = fs.openSync(this.filePath, 'r');
     try {
       const stat = fs.fstatSync(fd);
-      if (stat.size === this.checkpoint.byteOffset && afterSequence >= this.checkpoint.lastSequence) {
+      if (
+        stat.size === this.checkpoint.byteOffset &&
+        afterSequence >= this.checkpoint.lastSequence
+      ) {
         return []; // No new data — fast path
       }
 
       // Seek to last known position if checkpoint matches requested sequence
-      const startOffset = afterSequence >= this.checkpoint.lastSequence
-        ? this.checkpoint.byteOffset
-        : 0; // Full read needed if requesting earlier events
+      const startOffset =
+        afterSequence >= this.checkpoint.lastSequence ? this.checkpoint.byteOffset : 0; // Full read needed if requesting earlier events
 
       const buffer = Buffer.alloc(stat.size - startOffset);
       fs.readSync(fd, buffer, 0, buffer.length, startOffset);
 
-      const lines = buffer.toString('utf-8').split('\n').filter(l => l.trim());
+      const lines = buffer
+        .toString('utf-8')
+        .split('\n')
+        .filter((l) => l.trim());
       const events: EventEnvelope[] = [];
 
       for (const line of lines) {
@@ -416,7 +436,7 @@ release(): void {
 // packages/runtime/src/config.ts — ADD to validateWorkspacePlan()
 
 function detectDependencyCycles(tasks: TaskSpec[]): string[] | null {
-  const taskIds = new Set(tasks.map(t => t.id));
+  const taskIds = new Set(tasks.map((t) => t.id));
   const adjacency = new Map<string, string[]>();
   const inDegree = new Map<string, number>();
 
@@ -433,9 +453,7 @@ function detectDependencyCycles(tasks: TaskSpec[]): string[] | null {
   }
 
   // Kahn's algorithm — topological sort
-  const queue = [...inDegree.entries()]
-    .filter(([, deg]) => deg === 0)
-    .map(([id]) => id);
+  const queue = [...inDegree.entries()].filter(([, deg]) => deg === 0).map(([id]) => id);
   const sorted: string[] = [];
 
   while (queue.length > 0) {
@@ -450,9 +468,7 @@ function detectDependencyCycles(tasks: TaskSpec[]): string[] | null {
 
   if (sorted.length < tasks.length) {
     // Cycle detected — identify participating tasks
-    const inCycle = tasks
-      .filter(t => !sorted.includes(t.id))
-      .map(t => t.id);
+    const inCycle = tasks.filter((t) => !sorted.includes(t.id)).map((t) => t.id);
     return inCycle;
   }
 
@@ -464,7 +480,7 @@ const cycle = detectDependencyCycles(plan.tasks);
 if (cycle) {
   throw new ConfigValidationError(
     `Dependency cycle detected involving tasks: ${cycle.join(' → ')}. ` +
-    `Remove or restructure dependencies to eliminate the cycle.`
+      `Remove or restructure dependencies to eliminate the cycle.`,
   );
 }
 ```
@@ -667,14 +683,24 @@ private registerShutdownHandler(): void {
 // packages/runtime/src/campaign.ts — MODIFIED validation execution
 
 const STRIPPED_ENV_VARS = new Set([
-  'ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'GITHUB_TOKEN',
-  'AWS_SECRET_ACCESS_KEY', 'GOOGLE_APPLICATION_CREDENTIALS',
-  'LD_PRELOAD', 'LD_LIBRARY_PATH', 'DYLD_INSERT_LIBRARIES',
+  'ANTHROPIC_API_KEY',
+  'OPENAI_API_KEY',
+  'GITHUB_TOKEN',
+  'AWS_SECRET_ACCESS_KEY',
+  'GOOGLE_APPLICATION_CREDENTIALS',
+  'LD_PRELOAD',
+  'LD_LIBRARY_PATH',
+  'DYLD_INSERT_LIBRARIES',
 ]);
 
 const BLOCKED_ENV_OVERRIDES = new Set([
-  'PATH', 'HOME', 'USER', 'SHELL',
-  'LD_PRELOAD', 'LD_LIBRARY_PATH', 'DYLD_INSERT_LIBRARIES',
+  'PATH',
+  'HOME',
+  'USER',
+  'SHELL',
+  'LD_PRELOAD',
+  'LD_LIBRARY_PATH',
+  'DYLD_INSERT_LIBRARIES',
 ]);
 
 function buildValidationEnv(
@@ -692,7 +718,7 @@ function buildValidationEnv(
     for (const [key, value] of Object.entries(commandEnv)) {
       if (BLOCKED_ENV_OVERRIDES.has(key)) {
         throw new ConfigValidationError(
-          `Validation command cannot override environment variable: ${key}`
+          `Validation command cannot override environment variable: ${key}`,
         );
       }
       env[key] = value;
@@ -710,9 +736,8 @@ async function runValidation(
   runner: ProcessRunner,
 ): Promise<boolean> {
   for (const cmd of commands) {
-    const command = process.platform === 'win32'
-      ? cmd.run.windows ?? cmd.run.posix
-      : cmd.run.posix;
+    const command =
+      process.platform === 'win32' ? (cmd.run.windows ?? cmd.run.posix) : cmd.run.posix;
 
     const result = await runner.run(
       process.platform === 'win32' ? 'powershell' : 'bash',
@@ -720,7 +745,7 @@ async function runValidation(
         ? ['-NoProfile', '-NonInteractive', '-Command', command]
         : ['-c', command],
       {
-        cwd: worktreePath,  // Constrain working directory
+        cwd: worktreePath, // Constrain working directory
         timeoutMs: cmd.timeoutMs ?? 60_000,
         env: buildValidationEnv(cmd.env),
       },
@@ -827,14 +852,15 @@ private matchesCondition(
 ```
 
 This enables policy rules like:
+
 ```yaml
 policies:
   rules:
     - action: write_repo
-      when: { path: "*.config.*" }   # glob matching
+      when: { path: '*.config.*' } # glob matching
       decision: require_approval
     - action: git_read
-      when: { class: ["git_read", "git_write"] }  # array inclusion
+      when: { class: ['git_read', 'git_write'] } # array inclusion
       decision: allow
 ```
 
@@ -844,24 +870,26 @@ policies:
 
 ### Phase 1: Resilience Hardening (2-3 weeks)
 
-| Item | Priority | Effort | Dependency |
-|---|---|---|---|
-| M-2: CAS FileMutex | P0 | 2d | None |
-| M-3: Cycle detection | P0 | 1d | None |
-| M-9: JSONL recovery | P0 | 1d | None |
-| M-1: Indexed event reads | P0 | 3d | None |
-| M-5: Mutex-guarded history | P1 | 1d | M-2 |
-| M-6: Applied events compaction | P1 | 2d | None |
-| M-7: Shutdown handler | P1 | 2d | None |
-| M-4: GitHub retry | P1 | 2d | None |
-| M-8: Validation sandboxing | P1 | 2d | None |
-| M-10: Policy DSL | P2 | 3d | None |
-| EC-12: YAML alias limit | P2 | 0.5d | None |
+| Item                           | Priority | Effort | Dependency |
+| ------------------------------ | -------- | ------ | ---------- |
+| M-2: CAS FileMutex             | P0       | 2d     | None       |
+| M-3: Cycle detection           | P0       | 1d     | None       |
+| M-9: JSONL recovery            | P0       | 1d     | None       |
+| M-1: Indexed event reads       | P0       | 3d     | None       |
+| M-5: Mutex-guarded history     | P1       | 1d     | M-2        |
+| M-6: Applied events compaction | P1       | 2d     | None       |
+| M-7: Shutdown handler          | P1       | 2d     | None       |
+| M-4: GitHub retry              | P1       | 2d     | None       |
+| M-8: Validation sandboxing     | P1       | 2d     | None       |
+| M-10: Policy DSL               | P2       | 3d     | None       |
+| EC-12: YAML alias limit        | P2       | 0.5d   | None       |
 
-**Verification gate:** 
+**Verification gate:**
+
 ```bash
 pnpm test:unit && pnpm test:integration && pnpm test:security
 ```
+
 Add property-based tests with `fast-check` (already a dependency) for FileMutex contention and scheduler determinism.
 
 ---
@@ -887,7 +915,8 @@ const activeLeases = meter.createObservableGauge('omnibranch.leases.active');
 
 // Span wrapper for task execution
 export async function withTaskSpan<T>(
-  taskId: string, taskName: string,
+  taskId: string,
+  taskName: string,
   fn: () => Promise<T>,
 ): Promise<T> {
   return tracer.startActiveSpan(`task.${taskName}`, async (span) => {
@@ -922,10 +951,14 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
 ```typescript
 const MIGRATIONS: Array<{ version: number; description: string; sql: string }> = [
   { version: 1, description: 'Initial schema', sql: INITIAL_SCHEMA },
-  { version: 2, description: 'Add token tracking', sql: `
+  {
+    version: 2,
+    description: 'Add token tracking',
+    sql: `
     ALTER TABLE work_items ADD COLUMN token_usage TEXT;
     ALTER TABLE work_items ADD COLUMN cost_usd REAL DEFAULT 0;
-  `},
+  `,
+  },
   // Future migrations append here
 ];
 
@@ -934,7 +967,8 @@ function runMigrations(db: Database): void {
     version INTEGER PRIMARY KEY, applied_at TEXT, description TEXT
   )`);
 
-  const applied = db.prepare('SELECT version FROM schema_migrations')
+  const applied = db
+    .prepare('SELECT version FROM schema_migrations')
     .all()
     .map((r: any) => r.version as number);
 
@@ -942,8 +976,11 @@ function runMigrations(db: Database): void {
     if (!applied.includes(migration.version)) {
       db.transaction(() => {
         db.exec(migration.sql);
-        db.prepare('INSERT INTO schema_migrations VALUES (?, ?, ?)')
-          .run(migration.version, new Date().toISOString(), migration.description);
+        db.prepare('INSERT INTO schema_migrations VALUES (?, ?, ?)').run(
+          migration.version,
+          new Date().toISOString(),
+          migration.description,
+        );
       })();
     }
   }
@@ -965,17 +1002,17 @@ interface ModelProfile {
   costPer1kOutputTokens: number;
   maxContextWindow: number;
   latencyP50Ms: number;
-  capabilities: string[];     // ['code-gen', 'refactor', 'analysis', 'test-gen']
+  capabilities: string[]; // ['code-gen', 'refactor', 'analysis', 'test-gen']
 }
 
 // Route tasks to cheapest capable model:
 function selectModel(task: TaskSpec, models: ModelProfile[]): ModelProfile {
-  const taskComplexity = estimateComplexity(task.intent);  // keyword/heuristic classification
+  const taskComplexity = estimateComplexity(task.intent); // keyword/heuristic classification
   const contextSize = estimateContextSize(task.context);
 
   return models
-    .filter(m => m.maxContextWindow >= contextSize)
-    .filter(m => m.capabilities.some(c => matchesTaskType(task, c)))
+    .filter((m) => m.maxContextWindow >= contextSize)
+    .filter((m) => m.capabilities.some((c) => matchesTaskType(task, c)))
     .sort((a, b) => a.costPer1kInputTokens - b.costPer1kInputTokens)[0];
 }
 ```
@@ -997,14 +1034,20 @@ CREATE TABLE IF NOT EXISTS semantic_cache (
 ```
 
 Before launching an adapter, check cache:
-```typescript
-const cacheKey = stableHash(JSON.stringify({
-  intent: item.intent,
-  contextHash: hashContextFiles(item.context, worktreePath),
-  engine: item.lane,
-}));
 
-const cached = db.prepare('SELECT * FROM semantic_cache WHERE cache_key = ? AND datetime(created_at, "+" || ttl_seconds || " seconds") > datetime("now")')
+```typescript
+const cacheKey = stableHash(
+  JSON.stringify({
+    intent: item.intent,
+    contextHash: hashContextFiles(item.context, worktreePath),
+    engine: item.lane,
+  }),
+);
+
+const cached = db
+  .prepare(
+    'SELECT * FROM semantic_cache WHERE cache_key = ? AND datetime(created_at, "+" || ttl_seconds || " seconds") > datetime("now")',
+  )
   .get(cacheKey);
 
 if (cached) {
@@ -1037,24 +1080,24 @@ if (budget.maxCostUsd && spent.costUsd >= budget.maxCostUsd) {
 
 ### Phase 4: Multi-Repo & Remote Execution (6-10 weeks)
 
-| Feature | Description | Key Design Decision |
-|---|---|---|
-| **Multi-repo orchestration** | Single campaign spanning multiple git repositories | Introduce `RepositoryRef` type; extend `WorkspacePlan.repositories` array; worktrees created per-repo |
-| **Remote worktree execution** | Delegate task execution to remote machines via SSH or container orchestration | `RemoteProcessRunner` implementing the `ProcessRunner` interface; rsync worktree contents |
-| **Streaming adapter output** | Real-time stdout/stderr from engine adapters | Use `execa`'s streaming API with `buffer: false`; pipe to logger + bounded ring buffer |
-| **Webhook notifications** | POST campaign events to external services | `WebhookNotifier` triggered by event store appends; retry with backoff |
+| Feature                       | Description                                                                   | Key Design Decision                                                                                   |
+| ----------------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| **Multi-repo orchestration**  | Single campaign spanning multiple git repositories                            | Introduce `RepositoryRef` type; extend `WorkspacePlan.repositories` array; worktrees created per-repo |
+| **Remote worktree execution** | Delegate task execution to remote machines via SSH or container orchestration | `RemoteProcessRunner` implementing the `ProcessRunner` interface; rsync worktree contents             |
+| **Streaming adapter output**  | Real-time stdout/stderr from engine adapters                                  | Use `execa`'s streaming API with `buffer: false`; pipe to logger + bounded ring buffer                |
+| **Webhook notifications**     | POST campaign events to external services                                     | `WebhookNotifier` triggered by event store appends; retry with backoff                                |
 
 ---
 
 ### Phase 5: Governance & Compliance (4-6 weeks)
 
-| Feature | Description |
-|---|---|
-| **HMAC audit chain** | Each event envelope includes `hmac = HMAC-SHA256(prev_hmac + event_json, secret)`. Tampering detection via chain verification |
-| **RBAC** | Role-based access control for campaign operations. Roles: `viewer`, `operator`, `admin`. Enforce via policy engine extension |
-| **Cost dashboard** | CLI `omnibranch cost [--run-id]` aggregates token usage from projection store. Markdown report with per-task breakdown |
-| **Compliance export** | Export event store + projections as signed archive for audit purposes. CycloneDX SBOM already exists for supply chain |
-| **Database encryption** | SQLite encryption via `sqlcipher` for at-rest protection of sensitive campaign data |
+| Feature                 | Description                                                                                                                   |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| **HMAC audit chain**    | Each event envelope includes `hmac = HMAC-SHA256(prev_hmac + event_json, secret)`. Tampering detection via chain verification |
+| **RBAC**                | Role-based access control for campaign operations. Roles: `viewer`, `operator`, `admin`. Enforce via policy engine extension  |
+| **Cost dashboard**      | CLI `omnibranch cost [--run-id]` aggregates token usage from projection store. Markdown report with per-task breakdown        |
+| **Compliance export**   | Export event store + projections as signed archive for audit purposes. CycloneDX SBOM already exists for supply chain         |
+| **Database encryption** | SQLite encryption via `sqlcipher` for at-rest protection of sensitive campaign data                                           |
 
 ---
 
@@ -1110,13 +1153,13 @@ gantt
 
 ## Appendix: Test Coverage Gap Matrix
 
-| Module | Unit | Integration | Security | Concurrency | Property | Recommended |
-|---|---|---|---|---|---|---|
-| **Platform (index.ts)** | ❌ 0 files | ❌ | ❌ | ❌ | ❌ | P0: FileMutex contention, atomicWrite crash, path safety |
-| **Runtime orchestration** | ✅ | ✅ | ❌ | ❌ | ❌ | P0: Scheduler determinism (fast-check), lease expiry, backoff |
-| **Runtime persistence** | ✅ | ✅ | ❌ | ❌ | ❌ | P1: Event store corruption, projection replay idempotency |
-| **Runtime campaign** | ✅ | ✅ | ❌ | ❌ | ❌ | P1: Concurrent campaign rejection, graceful shutdown |
-| **Adapters engines** | ✅ | ❌ | ❌ | ❌ | ❌ | P1: Timeout handling, JSON parse fallback |
-| **Adapters GitHub** | ✅ (contract) | ❌ | ✅ | ❌ | ❌ | P1: 429 retry, approval gate bypass attempts |
-| **CLI** | ⚠️ 1 file | ❌ | ❌ | ❌ | ❌ | P2: Command wiring, error formatting, --json output |
-| **Installer** | ✅ | ✅ (contract) | ❌ | ❌ | ❌ | P2: Symlink escape, conflict detection |
+| Module                    | Unit          | Integration   | Security | Concurrency | Property | Recommended                                                   |
+| ------------------------- | ------------- | ------------- | -------- | ----------- | -------- | ------------------------------------------------------------- |
+| **Platform (index.ts)**   | ❌ 0 files    | ❌            | ❌       | ❌          | ❌       | P0: FileMutex contention, atomicWrite crash, path safety      |
+| **Runtime orchestration** | ✅            | ✅            | ❌       | ❌          | ❌       | P0: Scheduler determinism (fast-check), lease expiry, backoff |
+| **Runtime persistence**   | ✅            | ✅            | ❌       | ❌          | ❌       | P1: Event store corruption, projection replay idempotency     |
+| **Runtime campaign**      | ✅            | ✅            | ❌       | ❌          | ❌       | P1: Concurrent campaign rejection, graceful shutdown          |
+| **Adapters engines**      | ✅            | ❌            | ❌       | ❌          | ❌       | P1: Timeout handling, JSON parse fallback                     |
+| **Adapters GitHub**       | ✅ (contract) | ❌            | ✅       | ❌          | ❌       | P1: 429 retry, approval gate bypass attempts                  |
+| **CLI**                   | ⚠️ 1 file     | ❌            | ❌       | ❌          | ❌       | P2: Command wiring, error formatting, --json output           |
+| **Installer**             | ✅            | ✅ (contract) | ❌       | ❌          | ❌       | P2: Symlink escape, conflict detection                        |

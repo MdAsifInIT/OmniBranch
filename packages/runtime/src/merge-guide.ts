@@ -12,7 +12,13 @@ import type {
   RepositoryFacts,
   WorkItemProjection,
 } from '@omnibranch/contracts';
-import { atomicWrite, type Clock, type ProcessRunner, SystemClock, FileMutex } from '@omnibranch/platform';
+import {
+  atomicWrite,
+  type Clock,
+  type ProcessRunner,
+  SystemClock,
+  FileMutex,
+} from '@omnibranch/platform';
 
 export class MergeGuideService {
   constructor(

@@ -16,7 +16,7 @@ Choose the shortest path for what you want to accomplish.
 | Upgrade a managed installation                          | [Upgrade](UPGRADE.md)                 |
 | Recover or remove an installation safely                | [Rollback](ROLLBACK.md)               |
 | Understand current boundaries                           | [Limitations](LIMITATIONS.md)         |
-| Inspect token usage, cost, cache, and health metrics  | [Observability](OBSERVABILITY.md)     |
+| Inspect token usage, cost, cache, and health metrics    | [Observability](OBSERVABILITY.md)     |
 
 ## Build and contribute
 

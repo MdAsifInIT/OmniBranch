@@ -1,8 +1,4 @@
-import type {
-  AdapterResult,
-  ArtifactReference,
-  WorkItem,
-} from '@omnibranch/contracts';
+import type { AdapterResult, ArtifactReference, WorkItem } from '@omnibranch/contracts';
 import { stableHash, type ProcessRunner } from '@omnibranch/platform';
 import type { SqliteProjectionStore } from './persistence.js';
 
@@ -56,7 +52,9 @@ export class SemanticCacheManager {
     return entry;
   }
 
-  public async set(entry: Omit<SemanticCacheEntry, 'ttlSeconds'> & { ttlSeconds?: number }): Promise<void> {
+  public async set(
+    entry: Omit<SemanticCacheEntry, 'ttlSeconds'> & { ttlSeconds?: number },
+  ): Promise<void> {
     const record: SemanticCacheEntry = {
       ...entry,
       ttlSeconds: entry.ttlSeconds ?? this.defaultTtlSeconds,
@@ -65,7 +63,7 @@ export class SemanticCacheManager {
   }
 
   public async applyPatch(worktreePath: string, diffPatch: string): Promise<boolean> {
-    if (!diffPatch || ! diffPatch.trim()) return true;
+    if (!diffPatch || !diffPatch.trim()) return true;
     const result = await this.runner.run({
       executable: 'git',
       args: ['apply', '--whitespace=nowarn', '-'],

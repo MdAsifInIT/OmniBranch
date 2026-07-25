@@ -30,11 +30,11 @@ describe('platform package', () => {
     it('should acquire and release a lock', async () => {
       const lockPath = join(tmpDir, 'test.lock');
       const mutex = new FileMutex(lockPath);
-      
+
       await mutex.acquire('test-owner');
       const stats = await stat(lockPath);
       expect(stats.isFile()).toBe(true);
-      
+
       await mutex.release();
       await expect(stat(lockPath)).rejects.toThrow(/ENOENT/);
     });
@@ -42,16 +42,19 @@ describe('platform package', () => {
     it('should detect stale locks and acquire them', async () => {
       const lockPath = join(tmpDir, 'stale.lock');
       const clock = new FakeClock(new Date());
-      
+
       // Simulate a dead process leaving a lock by writing the file directly
-      await writeFile(lockPath, JSON.stringify({ owner: 'owner-1', pid: 99999, createdAt: clock.now().toISOString() }));
-      
+      await writeFile(
+        lockPath,
+        JSON.stringify({ owner: 'owner-1', pid: 99999, createdAt: clock.now().toISOString() }),
+      );
+
       // Advance clock past the stale threshold (1000ms)
       clock.advance(2000);
-      
+
       const mutex2 = new FileMutex(lockPath, 1000, clock);
       await expect(mutex2.acquire('owner-2')).resolves.not.toThrow();
-      
+
       const data = await readFile(lockPath, 'utf8');
       expect(JSON.parse(data).owner).toBe('owner-2');
       await mutex2.release();
@@ -61,18 +64,20 @@ describe('platform package', () => {
       const lockPath = join(tmpDir, 'contention.lock');
       const mutex1 = new FileMutex(lockPath, 60000);
       await mutex1.acquire('owner-1');
-      
+
       const mutex2 = new FileMutex(lockPath, 60000);
       let acquired = false;
-      const p = mutex2.acquire('owner-2').then(() => { acquired = true; });
-      
-      await new Promise(r => setTimeout(r, 200));
+      const p = mutex2.acquire('owner-2').then(() => {
+        acquired = true;
+      });
+
+      await new Promise((r) => setTimeout(r, 200));
       expect(acquired).toBe(false);
-      
+
       await mutex1.release();
       await p;
       expect(acquired).toBe(true);
-      
+
       await mutex2.release();
     });
   });
@@ -81,17 +86,17 @@ describe('platform package', () => {
     it('should perform a normal write', async () => {
       const filePath = join(tmpDir, 'atomic.txt');
       await atomicWrite(filePath, 'hello world');
-      
+
       const contents = await readFile(filePath, 'utf8');
       expect(contents).toBe('hello world');
     });
 
     it('should handle directory sync failure gracefully', async () => {
-      // Actually simulating this perfectly in a generic test is hard, 
+      // Actually simulating this perfectly in a generic test is hard,
       // but we can at least make sure atomicWrite handles standard writes and doesn't throw unexpectedly.
       const filePath = join(tmpDir, 'nested', 'atomic.txt');
       await atomicWrite(filePath, 'hello nested');
-      
+
       const contents = await readFile(filePath, 'utf8');
       expect(contents).toBe('hello nested');
     });
@@ -126,7 +131,7 @@ describe('platform package', () => {
       await mkdir(root);
       const safe = join(root, 'safe.txt');
       await writeFile(safe, 'content');
-      
+
       const result = await canonicalPathInside(root, safe);
       // canonicalPathInside uses realpath which returns long paths on Windows
       expect(result).toBe(await realpath(safe));
@@ -137,9 +142,9 @@ describe('platform package', () => {
       const outside = join(tmpDir, 'outside');
       await mkdir(root);
       await mkdir(outside);
-      
+
       await writeFile(join(outside, 'secret.txt'), 'secret');
-      
+
       // We can't always create symlinks on Windows without admin, but vitest runs node
       // Let's try to mock or do a best effort.
       try {
@@ -151,12 +156,12 @@ describe('platform package', () => {
         console.warn('Symlink creation failed, skipping symlink traversal test', e);
       }
     });
-    
+
     it('should throw for .. segments escaping root', async () => {
       const root = join(tmpDir, 'root');
       await mkdir(root);
       const evil = join(root, '..', 'root-sibling.txt');
-      
+
       await expect(canonicalPathInside(root, evil)).rejects.toThrow(/Path escapes allowed root/);
     });
   });
@@ -168,18 +173,20 @@ describe('platform package', () => {
       const result = await runner.run({
         executable: 'node',
         args: ['-e', 'console.log("hi")'],
-        cwd: tmpDir
+        cwd: tmpDir,
       });
       expect(result.exitCode).toBe(0);
       expect(result.stdout.trim()).toBe('hi');
     });
 
     it('should reject NUL bytes in arguments', async () => {
-      await expect(runner.run({
-        executable: 'echo',
-        args: ['hello\u0000world'],
-        cwd: tmpDir
-      })).rejects.toThrow(/NUL bytes/);
+      await expect(
+        runner.run({
+          executable: 'echo',
+          args: ['hello\u0000world'],
+          cwd: tmpDir,
+        }),
+      ).rejects.toThrow(/NUL bytes/);
     });
 
     it('should handle timeout', async () => {
@@ -187,7 +194,7 @@ describe('platform package', () => {
         executable: 'node',
         args: ['-e', 'setTimeout(() => {}, 5000)'],
         cwd: tmpDir,
-        timeoutMs: 100
+        timeoutMs: 100,
       });
       expect(result.timedOut).toBe(true);
       expect(result.exitCode).not.toBe(0); // Killed process exit code
@@ -199,11 +206,11 @@ describe('platform package', () => {
         executable: 'node',
         args: ['-e', 'setTimeout(() => {}, 5000)'],
         cwd: tmpDir,
-        signal: ac.signal
+        signal: ac.signal,
       });
-      
+
       ac.abort();
-      
+
       const result = await runPromise;
       // Depending on execa version, it might throw on abort or return failed result
       // But we specified reject: false by default in ExecaProcessRunner!
@@ -231,7 +238,7 @@ describe('platform package', () => {
       const input = 'https://api.example.com/v1/users?token=super_secret_token123&other=1';
       expect(redact(input)).toBe('https://api.example.com/v1/users[REDACTED]&other=1');
     });
-    
+
     it('should redact OpenAI/Anthropic keys', () => {
       const input = 'sk_test_1234567890abcdefghijklmnopqrstuvwxyz';
       expect(redact(input)).toBe('[REDACTED]');

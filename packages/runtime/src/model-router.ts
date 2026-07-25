@@ -17,8 +17,7 @@ export function filterAndRankModels(
   task: TaskModelRequirements,
   models: readonly ModelProfile[],
 ): ModelProfile[] {
-  const minContext =
-    task.requiredContextWindow ?? task.contextWindow ?? task.estimatedTokens ?? 0;
+  const minContext = task.requiredContextWindow ?? task.contextWindow ?? task.estimatedTokens ?? 0;
   const reqCapabilities =
     task.requiredCapabilities ?? task.requestedCapabilities ?? task.capabilities ?? [];
 
@@ -28,9 +27,7 @@ export function filterAndRankModels(
     }
 
     for (const reqCap of reqCapabilities) {
-      const hasCap = model.capabilities.some(
-        (cap) => cap.toLowerCase() === reqCap.toLowerCase(),
-      );
+      const hasCap = model.capabilities.some((cap) => cap.toLowerCase() === reqCap.toLowerCase());
       if (!hasCap) {
         return false;
       }

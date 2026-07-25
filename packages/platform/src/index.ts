@@ -1,5 +1,15 @@
 import { randomUUID, createHash } from 'node:crypto';
-import { mkdir, open, readFile, realpath, rename, stat, unlink, writeFile, rm } from 'node:fs/promises';
+import {
+  mkdir,
+  open,
+  readFile,
+  realpath,
+  rename,
+  stat,
+  unlink,
+  writeFile,
+  rm,
+} from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { execa } from 'execa';
@@ -65,7 +75,6 @@ export const ids = {
   artifact: (value: string): ArtifactId => value as ArtifactId,
   policyDecision: (value: string): PolicyDecisionId => value as PolicyDecisionId,
 };
-
 
 export class BoundedRingBuffer {
   private chunks: Buffer[] = [];
@@ -363,7 +372,7 @@ export class FileMutex {
             await unlink(tmp).catch(() => undefined);
           }
         }
-        
+
         if (Date.now() - started > this.staleAfterMs * 2) {
           throw new Error(`Resource is locked and not stale: ${this.lockPath}`);
         }

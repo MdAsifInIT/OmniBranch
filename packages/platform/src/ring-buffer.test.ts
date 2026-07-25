@@ -46,7 +46,10 @@ describe('ExecaProcessRunner streaming', () => {
 
     const result = await runner.run({
       executable: process.execPath,
-      args: ['-e', 'process.stdout.write("hello stdout\\n"); process.stderr.write("hello stderr\\n");'],
+      args: [
+        '-e',
+        'process.stdout.write("hello stdout\\n"); process.stderr.write("hello stderr\\n");',
+      ],
       cwd: process.cwd(),
       buffer: false,
       onStdout: (chunk) => stdoutChunks.push(chunk),

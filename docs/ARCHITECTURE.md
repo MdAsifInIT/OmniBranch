@@ -26,15 +26,15 @@ flowchart TD
 
 ## Package responsibilities
 
-| Package              | Responsibility                                                                                                         |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `apps/cli`           | Operator commands, stable JSON envelope, composition, and public npm bundle                                            |
-| `packages/contracts` | Branded identifiers, lifecycle/status types, ports, evidence records, and installer contracts                          |
-| `packages/platform`  | Clock/ID abstractions, process execution, logging, atomic files, locks, CAS filemutex, paths, and redaction           |
+| Package              | Responsibility                                                                                                                                                                               |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/cli`           | Operator commands, stable JSON envelope, composition, and public npm bundle                                                                                                                  |
+| `packages/contracts` | Branded identifiers, lifecycle/status types, ports, evidence records, and installer contracts                                                                                                |
+| `packages/platform`  | Clock/ID abstractions, process execution, logging, atomic files, locks, CAS filemutex, paths, and redaction                                                                                  |
 | `packages/runtime`   | Configuration, cycle detection, events, projections, schema migrations, semantic caching, Git backend, scheduling, ownership, policy, validation, token tracking, and local campaign service |
-| `packages/adapters`  | Mock, GitHub, Codex, Claude Code, OpenCode, and Antigravity adapter implementations                                    |
-| `packages/installer` | Provider detection, plans, receipts, backups, recovery journals, and contained skill activation                        |
-| `packages/test-kit`  | Deterministic fixtures and shared test helpers                                                                         |
+| `packages/adapters`  | Mock, GitHub, Codex, Claude Code, OpenCode, and Antigravity adapter implementations                                                                                                          |
+| `packages/installer` | Provider detection, plans, receipts, backups, recovery journals, and contained skill activation                                                                                              |
+| `packages/test-kit`  | Deterministic fixtures and shared test helpers                                                                                                                                               |
 
 The private packages are bundled into the public `omnibranch` package. Only `better-sqlite3@12.11.1` remains a runtime dependency of the published manifest.
 
@@ -89,7 +89,7 @@ The private packages are bundled into the public `omnibranch` package. Only `bet
 | `AiEngineAdapter`      | Shared engine lifecycle and normalized results     | `packages/contracts/src/index.ts`  |
 | `SkillInstaller`       | Receipt-backed universal skill lifecycle           | `packages/installer/src/index.ts`  |
 | `LocalCampaignService` | Offline campaign vertical slice                    | `packages/runtime/src/campaign.ts` |
-| `FileMutex`            | CAS-based file lock for cross-process isolation   | `packages/platform/src/index.ts`   |
+| `FileMutex`            | CAS-based file lock for cross-process isolation    | `packages/platform/src/index.ts`   |
 | `SemanticCache`        | Prompt similarity hashing and hit/miss caching     | `packages/runtime/src/index.ts`    |
 
 ## Deterministic invariants
@@ -110,7 +110,7 @@ The private packages are bundled into the public `omnibranch` package. Only `bet
 | Schema version mismatch or index corruption      | Execute sequential schema migration or re-index projections from JSONL                        |
 | Torn installer activation                        | Inspect the recovery journal, validate contained paths, restore or finalize deterministically |
 | Stale lease or worker                            | Expire or supersede only with persisted evidence; reject stale results                        |
-| Concurrent process contention                    | CAS `FileMutex` reclaims stale locks and enforces mutual exclusion                          |
+| Concurrent process contention                    | CAS `FileMutex` reclaims stale locks and enforces mutual exclusion                            |
 | Orphaned worktree or lock                        | Reconcile Git/filesystem state before cleanup                                                 |
 | External ref movement                            | Fail the expected-ref guard and require reconciliation                                        |
 | Missing/unknown engine controls                  | Downgrade to guided mode                                                                      |

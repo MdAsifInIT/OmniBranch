@@ -96,7 +96,6 @@ export class GitHubScmAdapter implements ScmAdapter {
     }
   }
 
-  
   private async request<T = unknown>(
     route: string,
     parameters: Readonly<Record<string, unknown>>,
@@ -122,7 +121,9 @@ export class GitHubScmAdapter implements ScmAdapter {
         if (attempt < maxAttempts) {
           if (error.code === 'rate_limited') {
             const retryAfter = (error as any).retryAfter;
-            const delay = retryAfter ? parseInt(retryAfter, 10) * 1000 : 1000 * Math.pow(2, attempt);
+            const delay = retryAfter
+              ? parseInt(retryAfter, 10) * 1000
+              : 1000 * Math.pow(2, attempt);
             await new Promise((resolve) => setTimeout(resolve, delay));
             continue;
           }
@@ -136,7 +137,6 @@ export class GitHubScmAdapter implements ScmAdapter {
     }
     throw lastError;
   }
-
 
   async repositorySnapshot(): Promise<GitHubRepositorySnapshot> {
     try {
@@ -172,13 +172,10 @@ export class GitHubScmAdapter implements ScmAdapter {
 
   async pullRequest(number: number): Promise<GitHubPullRequestSnapshot> {
     try {
-      const response = await this.request(
-        'GET /repos/{owner}/{repo}/pulls/{pull_number}',
-        {
-          ...this.repoParameters(),
-          pull_number: number,
-        },
-      );
+      const response = await this.request('GET /repos/{owner}/{repo}/pulls/{pull_number}', {
+        ...this.repoParameters(),
+        pull_number: number,
+      });
       return normalizePullRequest(response.data);
     } catch (error) {
       throw normalizeGitHubError(error);
@@ -187,10 +184,10 @@ export class GitHubScmAdapter implements ScmAdapter {
 
   async checks(reference: string): Promise<readonly GitHubCheckSnapshot[]> {
     try {
-      const response = await this.request(
-        'GET /repos/{owner}/{repo}/commits/{ref}/check-runs',
-        { ...this.repoParameters(), ref: reference },
-      );
+      const response = await this.request('GET /repos/{owner}/{repo}/commits/{ref}/check-runs', {
+        ...this.repoParameters(),
+        ref: reference,
+      });
       const data = record(response.data);
       return arrayValue(data, 'check_runs').map((item) => {
         const check = record(item);
@@ -315,10 +312,11 @@ export class GitHubScmAdapter implements ScmAdapter {
     if (!Array.isArray(labels) || labels.some((label) => typeof label !== 'string')) {
       throw new GitHubAdapterError('invalid_input', 'labels must be an array of strings');
     }
-    const response = await this.request(
-      'POST /repos/{owner}/{repo}/issues/{issue_number}/labels',
-      { ...this.repoParameters(), issue_number: requiredNumber(input, 'number'), labels },
-    );
+    const response = await this.request('POST /repos/{owner}/{repo}/issues/{issue_number}/labels', {
+      ...this.repoParameters(),
+      issue_number: requiredNumber(input, 'number'),
+      labels,
+    });
     return { labels: response.data };
   }
 
@@ -343,30 +341,24 @@ export class GitHubScmAdapter implements ScmAdapter {
     if (!['APPROVE', 'REQUEST_CHANGES', 'COMMENT'].includes(event)) {
       throw new GitHubAdapterError('invalid_input', `Unsupported review event: ${event}`);
     }
-    const response = await this.request(
-      'POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews',
-      {
-        ...this.repoParameters(),
-        pull_number: requiredNumber(input, 'number'),
-        event,
-        body: `${optionalString(input, 'body') ?? ''}\n\n${correlationMarker(correlation(input))}`.trim(),
-      },
-    );
+    const response = await this.request('POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews', {
+      ...this.repoParameters(),
+      pull_number: requiredNumber(input, 'number'),
+      event,
+      body: `${optionalString(input, 'body') ?? ''}\n\n${correlationMarker(correlation(input))}`.trim(),
+    });
     return { review: response.data };
   }
 
   private async promote(
     input: Readonly<Record<string, unknown>>,
   ): Promise<Readonly<Record<string, unknown>>> {
-    const response = await this.request(
-      'PUT /repos/{owner}/{repo}/pulls/{pull_number}/merge',
-      {
-        ...this.repoParameters(),
-        pull_number: requiredNumber(input, 'number'),
-        sha: requiredString(input, 'expectedHeadOid'),
-        merge_method: optionalString(input, 'mergeMethod') ?? 'squash',
-      },
-    );
+    const response = await this.request('PUT /repos/{owner}/{repo}/pulls/{pull_number}/merge', {
+      ...this.repoParameters(),
+      pull_number: requiredNumber(input, 'number'),
+      sha: requiredString(input, 'expectedHeadOid'),
+      merge_method: optionalString(input, 'mergeMethod') ?? 'squash',
+    });
     return { promotion: response.data };
   }
 
@@ -447,7 +439,11 @@ function normalizePullRequest(value: unknown): GitHubPullRequestSnapshot {
 
 function normalizeGitHubError(error: unknown): GitHubAdapterError {
   if (error instanceof GitHubAdapterError) return error;
-  const candidate = error as { status?: unknown; message?: unknown; response?: { headers?: Record<string, string> } };
+  const candidate = error as {
+    status?: unknown;
+    message?: unknown;
+    response?: { headers?: Record<string, string> };
+  };
   const status = typeof candidate.status === 'number' ? candidate.status : undefined;
   const code =
     status === 401

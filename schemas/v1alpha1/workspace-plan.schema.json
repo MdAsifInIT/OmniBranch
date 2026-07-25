@@ -28,9 +28,7 @@
     "metadata": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "name"
-      ],
+      "required": ["name"],
       "properties": {
         "name": {
           "type": "string",
@@ -57,11 +55,7 @@
     "runtime": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "workspaceRoot",
-        "tempRoot",
-        "worktreeRoot"
-      ],
+      "required": ["workspaceRoot", "tempRoot", "worktreeRoot"],
       "properties": {
         "nodeVersion": {
           "type": "string",
@@ -81,16 +75,11 @@
           "additionalProperties": false,
           "properties": {
             "windows": {
-              "enum": [
-                "powershell"
-              ],
+              "enum": ["powershell"],
               "default": "powershell"
             },
             "posix": {
-              "enum": [
-                "bash",
-                "zsh"
-              ],
+              "enum": ["bash", "zsh"],
               "default": "bash"
             }
           }
@@ -129,9 +118,7 @@
         "semanticCache": {
           "type": "object",
           "additionalProperties": false,
-          "required": [
-            "enabled"
-          ],
+          "required": ["enabled"],
           "properties": {
             "enabled": {
               "type": "boolean",
@@ -173,11 +160,7 @@
     "branchTopology": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "trunk",
-        "laneBranches",
-        "attemptBranches"
-      ],
+      "required": ["trunk", "laneBranches", "attemptBranches"],
       "properties": {
         "trunk": {
           "type": "string",
@@ -189,9 +172,7 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "name"
-            ],
+            "required": ["name"],
             "properties": {
               "name": {
                 "type": "string",
@@ -214,9 +195,7 @@
         "attemptBranches": {
           "type": "object",
           "additionalProperties": false,
-          "required": [
-            "prefix"
-          ],
+          "required": ["prefix"],
           "properties": {
             "prefix": {
               "$ref": "#/$defs/branchPrefix"
@@ -239,15 +218,10 @@
     "ownership": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "sets"
-      ],
+      "required": ["sets"],
       "properties": {
         "defaultMode": {
-          "enum": [
-            "exclusive",
-            "shared"
-          ],
+          "enum": ["exclusive", "shared"],
           "default": "exclusive"
         },
         "sets": {
@@ -272,11 +246,7 @@
       "additionalProperties": false,
       "properties": {
         "defaultAction": {
-          "enum": [
-            "allow",
-            "deny",
-            "require_approval"
-          ],
+          "enum": ["allow", "deny", "require_approval"],
           "default": "require_approval"
         },
         "packs": {
@@ -285,9 +255,7 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "name"
-            ],
+            "required": ["name"],
             "properties": {
               "name": {
                 "type": "string"
@@ -301,11 +269,7 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": [
-              "id",
-              "when",
-              "then"
-            ],
+            "required": ["id", "when", "then"],
             "properties": {
               "id": {
                 "$ref": "#/$defs/identifier"
@@ -316,10 +280,7 @@
               "then": {
                 "type": "object",
                 "additionalProperties": false,
-                "required": [
-                  "action",
-                  "reason"
-                ],
+                "required": ["action", "reason"],
                 "properties": {
                   "action": {
                     "enum": [
@@ -347,18 +308,12 @@
     "state": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "projection",
-        "eventStore"
-      ],
+      "required": ["projection", "eventStore"],
       "properties": {
         "projection": {
           "type": "object",
           "additionalProperties": false,
-          "required": [
-            "backend",
-            "path"
-          ],
+          "required": ["backend", "path"],
           "properties": {
             "backend": {
               "const": "sqlite"
@@ -371,10 +326,7 @@
         "eventStore": {
           "type": "object",
           "additionalProperties": false,
-          "required": [
-            "backend",
-            "path"
-          ],
+          "required": ["backend", "path"],
           "properties": {
             "backend": {
               "const": "jsonl"
@@ -404,9 +356,7 @@
     "reporting": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "outputRoot"
-      ],
+      "required": ["outputRoot"],
       "properties": {
         "outputRoot": {
           "type": "string"
@@ -414,14 +364,9 @@
         "formats": {
           "type": "array",
           "items": {
-            "enum": [
-              "markdown",
-              "json"
-            ]
+            "enum": ["markdown", "json"]
           },
-          "default": [
-            "markdown"
-          ],
+          "default": ["markdown"],
           "minItems": 1,
           "uniqueItems": true
         },
@@ -503,10 +448,7 @@
     "branch": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "prefix",
-        "base"
-      ],
+      "required": ["prefix", "base"],
       "properties": {
         "prefix": {
           "$ref": "#/$defs/branchPrefix"
@@ -524,9 +466,7 @@
     "lane": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "branchClass"
-      ],
+      "required": ["branchClass"],
       "properties": {
         "priority": {
           "type": "integer",
@@ -567,10 +507,7 @@
     "ownershipSet": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "globs",
-        "lanes"
-      ],
+      "required": ["globs", "lanes"],
       "properties": {
         "globs": {
           "type": "array",
@@ -598,10 +535,7 @@
     "command": {
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "id",
-        "run"
-      ],
+      "required": ["id", "run"],
       "properties": {
         "id": {
           "$ref": "#/$defs/identifier"
@@ -619,14 +553,10 @@
           },
           "anyOf": [
             {
-              "required": [
-                "windows"
-              ]
+              "required": ["windows"]
             },
             {
-              "required": [
-                "posix"
-              ]
+              "required": ["posix"]
             }
           ]
         },
@@ -647,10 +577,7 @@
           "additionalProperties": false,
           "properties": {
             "format": {
-              "enum": [
-                "text",
-                "json"
-              ]
+              "enum": ["text", "json"]
             }
           }
         },
@@ -667,9 +594,7 @@
       "additionalProperties": false,
       "oneOf": [
         {
-          "required": [
-            "fromEnv"
-          ],
+          "required": ["fromEnv"],
           "properties": {
             "fromEnv": {
               "type": "string"
@@ -677,9 +602,7 @@
           }
         },
         {
-          "required": [
-            "fromFile"
-          ],
+          "required": ["fromFile"],
           "properties": {
             "fromFile": {
               "type": "string"
@@ -687,9 +610,7 @@
           }
         },
         {
-          "required": [
-            "fromKeychain"
-          ],
+          "required": ["fromKeychain"],
           "properties": {
             "fromKeychain": {
               "type": "string"

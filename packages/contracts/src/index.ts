@@ -539,7 +539,8 @@ export interface SchedulerInput {
   readonly adapterCapacity: Readonly<Record<string, number>>;
   readonly activeByLane: Readonly<Record<string, number>>;
   readonly activeByAdapter: Readonly<Record<string, number>>;
-  readonly availableModels?: Readonly<Record<string, readonly ModelProfile[]>> | readonly ModelProfile[];
+  readonly availableModels?:
+    Readonly<Record<string, readonly ModelProfile[]>> | readonly ModelProfile[];
 }
 
 export interface PolicyEngine {

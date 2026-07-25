@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import type { AssignmentEnvelope, LeaseId, RunId, WorkItemId, WorkerId } from '@omnibranch/contracts';
+import type {
+  AssignmentEnvelope,
+  LeaseId,
+  RunId,
+  WorkItemId,
+  WorkerId,
+} from '@omnibranch/contracts';
 import type { ProcessRequest, ProcessResult, ProcessRunner } from '@omnibranch/platform';
 import { FakeClock, SequenceIdGenerator } from '@omnibranch/platform';
 import { CliEngineAdapter } from './engines.js';

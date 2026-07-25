@@ -12,9 +12,14 @@ import type {
   PreparedAssignment,
   ResumeLevel,
 } from '@omnibranch/contracts';
-import type { Clock, IdGenerator, Logger, ProcessResult, ProcessRunner } from '@omnibranch/platform';
+import type {
+  Clock,
+  IdGenerator,
+  Logger,
+  ProcessResult,
+  ProcessRunner,
+} from '@omnibranch/platform';
 import { SystemClock, UuidGenerator, redact } from '@omnibranch/platform';
-
 
 export interface CliAdapterOptions {
   readonly clock?: Clock;
@@ -295,7 +300,16 @@ export function createCodexAdapter(
   options?: CliAdapterOptions,
 ): CliEngineAdapter {
   return new CliEngineAdapter(
-    profile('codex-cli', 'Codex', 'CLI', 'codex', /codex/i, 2, 'checkpoint', launchArguments ?? defaultAdapterLaunchArguments),
+    profile(
+      'codex-cli',
+      'Codex',
+      'CLI',
+      'codex',
+      /codex/i,
+      2,
+      'checkpoint',
+      launchArguments ?? defaultAdapterLaunchArguments,
+    ),
     runner,
     options,
   );

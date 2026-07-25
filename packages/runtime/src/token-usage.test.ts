@@ -9,7 +9,13 @@ import { withTemporaryDirectory } from '@omnibranch/test-kit';
 
 import { SqliteProjectionStore } from './persistence.js';
 
-function createProjection(workItemId: string, runId: string, inputTokens = 100, outputTokens = 50, cost = 0.005): WorkItemProjection {
+function createProjection(
+  workItemId: string,
+  runId: string,
+  inputTokens = 100,
+  outputTokens = 50,
+  cost = 0.005,
+): WorkItemProjection {
   const item: WorkItem = {
     workItemId: ids.workItem(workItemId),
     runId: ids.run(runId),
@@ -37,7 +43,11 @@ function createProjection(workItemId: string, runId: string, inputTokens = 100, 
   };
 }
 
-function createEvent(eventId: string, payload: WorkItemProjection, globalSequence = 1): EventEnvelope {
+function createEvent(
+  eventId: string,
+  payload: WorkItemProjection,
+  globalSequence = 1,
+): EventEnvelope {
   return {
     schemaVersion: 1,
     eventId: ids.event(eventId),
@@ -61,10 +71,7 @@ describe('Token Usage Tracking & Projection', () => {
         const proj1 = createProjection('work-1', 'run-1', 1000, 500, 0.03);
         const proj2 = createProjection('work-2', 'run-1', 2000, 800, 0.05);
 
-        await store.apply([
-          createEvent('event-1', proj1, 1),
-          createEvent('event-2', proj2, 2),
-        ]);
+        await store.apply([createEvent('event-1', proj1, 1), createEvent('event-2', proj2, 2)]);
 
         const items = await store.getWorkItems(ids.run('run-1') as RunId);
         expect(items).toHaveLength(2);

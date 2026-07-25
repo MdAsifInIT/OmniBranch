@@ -3,10 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
-import {
-  JsonlEventStore,
-  SqliteProjectionStore,
-} from './persistence.js';
+import { JsonlEventStore, SqliteProjectionStore } from './persistence.js';
 import { FileMutex, FakeClock, ExecaProcessRunner, ids } from '@omnibranch/platform';
 import { LocalCampaignService } from './campaign.js';
 import type { EventEnvelope, AiEngineAdapter } from '@omnibranch/contracts';
@@ -26,7 +23,7 @@ describe('Concurrency Integration Tests', () => {
     const filePath = path.join(testDir, 'events.jsonl');
     const store1 = new JsonlEventStore(filePath);
     const store2 = new JsonlEventStore(filePath);
-    
+
     const event1: EventEnvelope = {
       schemaVersion: 1,
       eventId: ids.event('evt-1'),
@@ -38,7 +35,7 @@ describe('Concurrency Integration Tests', () => {
       payload: {},
       globalSequence: 0,
     };
-    
+
     const event2: EventEnvelope = {
       schemaVersion: 1,
       eventId: ids.event('evt-2'),
@@ -61,7 +58,7 @@ describe('Concurrency Integration Tests', () => {
 
     const result = await store1.verify();
     expect(result.valid).toBe(true);
-    
+
     const allEvents: EventEnvelope[] = [];
     for await (const event of store1.readAll()) {
       allEvents.push(event);
@@ -88,10 +85,7 @@ describe('Concurrency Integration Tests', () => {
       globalSequence: 1,
     };
 
-    await Promise.all([
-      store1.apply([event]),
-      store2.apply([event]),
-    ]);
+    await Promise.all([store1.apply([event]), store2.apply([event])]);
 
     const checkpoint1 = await store1.checkpoint();
     const checkpoint2 = await store2.checkpoint();
@@ -105,7 +99,7 @@ describe('Concurrency Integration Tests', () => {
   it('handles concurrent FileMutex.acquire() with stale lock to exactly one winner', async () => {
     const lockPath = path.join(testDir, 'test.lock');
     const clock = new FakeClock(new Date());
-    
+
     const mutex1 = new FileMutex(lockPath, 100, clock);
     await mutex1.acquire('winner1');
 
@@ -121,10 +115,12 @@ describe('Concurrency Integration Tests', () => {
 
     const fulfilled = results.filter((r) => r.status === 'fulfilled');
     const rejected = results.filter((r) => r.status === 'rejected');
-    
+
     expect(fulfilled).toHaveLength(1);
     expect(rejected).toHaveLength(1);
-    expect((rejected[0] as PromiseRejectedResult).reason.message).toMatch(/Resource is locked|ENOENT/);
+    expect((rejected[0] as PromiseRejectedResult).reason.message).toMatch(
+      /Resource is locked|ENOENT/,
+    );
 
     // cleanup
     await mutex1.release();
@@ -138,8 +134,16 @@ describe('Concurrency Integration Tests', () => {
     const runner = new ExecaProcessRunner();
     await runner.run({ executable: 'git', args: ['init', testDir], cwd: testDir });
     await runner.run({ executable: 'git', args: ['config', 'user.name', 'test'], cwd: testDir });
-    await runner.run({ executable: 'git', args: ['config', 'user.email', 'test@test.com'], cwd: testDir });
-    await runner.run({ executable: 'git', args: ['commit', '--allow-empty', '-m', 'init'], cwd: testDir });
+    await runner.run({
+      executable: 'git',
+      args: ['config', 'user.email', 'test@test.com'],
+      cwd: testDir,
+    });
+    await runner.run({
+      executable: 'git',
+      args: ['commit', '--allow-empty', '-m', 'init'],
+      cwd: testDir,
+    });
 
     const svc1 = new LocalCampaignService(testDir, runner);
     const svc2 = new LocalCampaignService(testDir, runner);
@@ -183,16 +187,18 @@ describe('Concurrency Integration Tests', () => {
           engineFamily: 'mock',
           engineSurface: 'mock',
           status: 'completed',
-          assignmentEcho: { workItemId: handle.workItemId }, 
-          artifacts: [{
-            artifactId: 'art-1',
-            kind: 'file-diff',
-            path: 'test',
-            source: 'test'
-          }],
+          assignmentEcho: { workItemId: handle.workItemId },
+          artifacts: [
+            {
+              artifactId: 'art-1',
+              kind: 'file-diff',
+              path: 'test',
+              source: 'test',
+            },
+          ],
           changeClaims: [{ path: 'test' }],
           metrics: { durationMs: 1, costUsd: 0 },
-        }; 
+        };
       },
     } as unknown as AiEngineAdapter;
 
@@ -203,6 +209,8 @@ describe('Concurrency Integration Tests', () => {
 
     const rejected = results.filter((r) => r.status === 'rejected');
     expect(rejected.length).toBeGreaterThanOrEqual(1);
-    expect((rejected[0] as PromiseRejectedResult).reason.message).toMatch(/Resource is locked|locked|ENOENT/i);
+    expect((rejected[0] as PromiseRejectedResult).reason.message).toMatch(
+      /Resource is locked|locked|ENOENT/i,
+    );
   }, 30000); // Increased timeout to 30s
 });

@@ -78,7 +78,6 @@ The canonical skill contains one concise `SKILL.md`, optional deterministic scri
 
 Reason: the skill must not consume context with architecture and contributor material that is irrelevant during normal execution.
 
-
 ## ADR-012: CAS-Based FileMutex
 
 Status: Accepted.
