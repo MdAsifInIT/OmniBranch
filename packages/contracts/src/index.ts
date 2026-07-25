@@ -1,9 +1,3 @@
-export interface TokenUsage {
-  readonly inputTokens?: number;
-  readonly outputTokens?: number;
-  readonly estimatedCostUsd?: number;
-}
-
 export type Brand<T, B extends string> = T & { readonly __brand: B };
 
 export type CampaignId = Brand<string, 'CampaignId'>;

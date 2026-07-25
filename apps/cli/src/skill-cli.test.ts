@@ -44,7 +44,7 @@ describe('omnibranch skill CLI', () => {
     );
     expect(installed).toMatchObject({
       ok: true,
-      data: { receipts: [{ action: 'install', payloadVersion: '0.2.1' }] },
+      data: { receipts: [{ action: 'install', payloadVersion: '0.3.0' }] },
     });
 
     const status = await run(
