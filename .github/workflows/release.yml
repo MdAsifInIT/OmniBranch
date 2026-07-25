@@ -31,7 +31,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm verify:release
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v4
         with:
           name: omnibranch-${{ github.ref_name }}
           path: artifacts/
@@ -46,7 +46,7 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@v4
         with:
           name: omnibranch-${{ github.ref_name }}
           path: artifacts
@@ -55,6 +55,9 @@ jobs:
           node-version: 22
           registry-url: https://registry.npmjs.org
       - name: Publish verified tarball with provenance
-        run: npm publish ./artifacts/omnibranch-*.tgz --provenance --access public
+        run: |
+          TARBALL=$(ls ./artifacts/omnibranch-*.tgz | head -n 1)
+          echo "Publishing $TARBALL"
+          npm publish "$TARBALL" --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
