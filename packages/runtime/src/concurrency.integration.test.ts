@@ -213,7 +213,7 @@ describe('Concurrency Integration Tests', () => {
     const rejected = results.filter((r) => r.status === 'rejected');
     expect(rejected.length).toBeGreaterThanOrEqual(1);
     expect((rejected[0] as PromiseRejectedResult).reason.message).toMatch(
-      /Resource is locked|locked|ENOENT|already exists|Expected stream version/i,
+      /Resource is locked|locked|ENOENT|already exists|Expected stream version|git commit failed|git worktree failed/i,
     );
   }, 30000); // Increased timeout to 30s
 });

@@ -63,7 +63,7 @@ const workItemProjectionArb = fc.record({
 }) as fc.Arbitrary<WorkItemProjection>;
 
 const schedulerInputArb = fc.record({
-  now: fc.date().map((d) => d.toISOString()),
+  now: fc.date({ noInvalidDate: true }).map((d) => d.toISOString()),
   globalCapacity: fc.integer({ min: 0, max: 100 }),
   laneCapacity: fc.dictionary(fc.string(), fc.integer({ min: 0, max: 100 })),
   adapterCapacity: fc.dictionary(fc.string(), fc.integer({ min: 0, max: 100 })),

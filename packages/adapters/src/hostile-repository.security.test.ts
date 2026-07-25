@@ -12,7 +12,7 @@ import type {
   WorkItemId,
   WorkerId,
 } from '@omnibranch/contracts';
-import { FileMutex, canonicalPathInside, redact } from '@omnibranch/platform';
+import { FakeClock, FileMutex, canonicalPathInside, redact } from '@omnibranch/platform';
 
 import { DeterministicPolicyEngine, LeaseManager } from '@omnibranch/runtime';
 
@@ -122,9 +122,14 @@ describe('hostile repository boundaries', () => {
       }),
     ).toThrow();
     const root = await mkdtemp(path.join(os.tmpdir(), 'omnibranch-lock-'));
-    const first = new FileMutex(path.join(root, 'mutation.lock'), 500);
-    const second = new FileMutex(path.join(root, 'mutation.lock'), 500);
+    const lockFile = path.join(root, 'mutation.lock');
+    const first = new FileMutex(lockFile, 500);
     await first.acquire('one');
+    // Use a FakeClock frozen at "now" so the lock file never appears stale
+    // to the second mutex. The spin-loop still exits via Date.now() after
+    // staleAfterMs * 2 = 1 second.
+    const frozenClock = new FakeClock(new Date());
+    const second = new FileMutex(lockFile, 500, frozenClock);
     await expect(second.acquire('two')).rejects.toThrow(/locked/i);
     await first.release();
   }, 15000);
