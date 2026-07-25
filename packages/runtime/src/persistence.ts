@@ -479,18 +479,20 @@ export class SqliteProjectionStore implements ProjectionStore {
   async getSemanticCacheEntry(cacheKey: string): Promise<SemanticCacheEntry | null> {
     const row = this.requireDatabase()
       .prepare('SELECT * FROM semantic_cache WHERE cache_key = ?')
-      .get(cacheKey) as {
-      cache_key: string;
-      work_item_id: string;
-      adapter_id: string;
-      status: import('@omnibranch/contracts').AdapterStatus;
-      summary: string;
-      artifacts_json: string;
-      change_claims_json: string;
-      diff_patch: string;
-      created_at: string;
-      ttl_seconds: number;
-    } | undefined;
+      .get(cacheKey) as
+      | {
+          cache_key: string;
+          work_item_id: string;
+          adapter_id: string;
+          status: import('@omnibranch/contracts').AdapterStatus;
+          summary: string;
+          artifacts_json: string;
+          change_claims_json: string;
+          diff_patch: string;
+          created_at: string;
+          ttl_seconds: number;
+        }
+      | undefined;
     if (!row) return null;
     return {
       cacheKey: row.cache_key,

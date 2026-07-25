@@ -187,7 +187,14 @@ export class LocalCampaignService {
       let estimatedCostUsd = 0;
       for await (const ev of events.readAll()) {
         if (ev.type === 'adapter.completed' && ev.payload) {
-          const payload = ev.payload as { tokenUsage?: { inputTokens?: number; outputTokens?: number; estimatedCostUsd?: number; costUsd?: number } };
+          const payload = ev.payload as {
+            tokenUsage?: {
+              inputTokens?: number;
+              outputTokens?: number;
+              estimatedCostUsd?: number;
+              costUsd?: number;
+            };
+          };
           if (payload.tokenUsage) {
             totalInputTokens += payload.tokenUsage.inputTokens ?? 0;
             totalOutputTokens += payload.tokenUsage.outputTokens ?? 0;

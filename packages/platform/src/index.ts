@@ -229,7 +229,9 @@ export class ExecaProcessRunner implements ProcessRunner {
       this.activeProcesses.delete(subprocess);
     }
 
-    const exitCode = (typeof result.exitCode === 'number' ? result.exitCode : undefined) ?? (result.failed ? 1 : 0);
+    const exitCode =
+      (typeof result.exitCode === 'number' ? result.exitCode : undefined) ??
+      (result.failed ? 1 : 0);
     const stdoutStr = stdoutBuffer.toString();
     const stderrStr = stderrBuffer.toString();
     const stdout =
